@@ -8,8 +8,8 @@
         <router-view />
       </a-layout-content>
       <a-layout-footer class="footer">
-        <a href="https://codefather.cn" target="_blank">
-          本系统由码农金官辉开发
+        <a href="https://github.com/jinguanhui/gh-ai--analysis-frontend" target="_blank">
+          本系统由码农金官辉开发，点击跳转到github
         </a>
       </a-layout-footer>
     </a-layout>

@@ -129,7 +129,7 @@ const items = computed<MenuProps["items"]>(() => {
       title: "主页",
     },
     {
-      key: "/analysis",
+      key: "/chart/analysis",
       icon: () => h(BarChartOutlined),
       label: "AI分析",
       title: "AI分析",

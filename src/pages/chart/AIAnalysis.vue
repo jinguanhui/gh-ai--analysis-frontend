@@ -41,7 +41,7 @@
           <a-button type="primary" @click="handleAnalysis" :loading="isLoading" block class="analyze-btn">
             开始AI分析
           </a-button>
-          
+
           <!-- 添加重置按钮 -->
           <a-button @click="handleReset" block class="reset-btn" style="margin-top: 10px;">
             重置
@@ -97,12 +97,13 @@ const analysisResult = ref('');
 const chartRef = ref<HTMLElement | null>(null);
 let myChart: echarts.ECharts | null = null;
 
+
 // 初始化图表的函数
 const initChart = () => {
   if (!myChart && chartRef.value) {
     myChart = echarts.init(chartRef.value);
     console.log('图表初始化成功', myChart);
-    
+
     // 添加窗口大小变化监听，确保图表能自适应容器大小
     window.addEventListener('resize', handleResize);
   }
@@ -123,7 +124,7 @@ onMounted(() => {
     router.push('/login');
     return;
   }
-  
+
   console.log('页面加载完成');
   // 延迟一下确保DOM已完全渲染
   nextTick(() => {
@@ -161,7 +162,7 @@ const handleReset = () => {
   chartType.value = '';
   fileList.value = [];
   analysisResult.value = '';
-  
+
   // 清除图表
   if (myChart) {
     myChart.setOption({});
@@ -215,7 +216,7 @@ const handleAnalysis = async () => {
 
   isLoading.value = true;
   analysisResult.value = '';
-  
+
   // 确保图表已初始化
   nextTick(() => {
     initChart();
@@ -233,7 +234,7 @@ const handleAnalysis = async () => {
     formData.append('chartType', chartType.value);
 
     // 使用项目中的myAxios实例调用后端API进行AI分析
-    const response = await myAxios.post('/api/chart/gen', formData, {
+    const response = await myAxios.post('/chart/gen', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -247,7 +248,7 @@ const handleAnalysis = async () => {
 
       if (res.data.genChart) {
         try {
-          let chartData:any;
+          let chartData: any;
           // 检查genChart是否已经是对象，还是字符串
           if (typeof res.data.genChart === 'string') {
             // 如果是字符串，尝试解析JSON
@@ -279,9 +280,9 @@ const handleAnalysis = async () => {
             message.error('图表配置格式不正确!');
             return;
           }
-          
+
           console.log('图表配置:', chartData);
-          
+
           // 再次确保myChart已初始化
           nextTick(() => {
             initChart();
@@ -315,6 +316,16 @@ const handleAnalysis = async () => {
 </script>
 
 <style scoped>
+.progress-bar {
+  width: 100%;
+  background: #e0e0e0;
+}
+
+.progress {
+  height: 20px;
+  background: #76c7c0;
+}
+
 /* 现有的样式保持不变 */
 .ai-analysis-container {
   padding: 24px;
@@ -326,7 +337,8 @@ const handleAnalysis = async () => {
   display: flex;
   gap: 24px;
   margin-top: 16px;
-  height: calc(100vh - 80px); /* 减去顶部标题和padding的高度 */
+  height: calc(100vh - 80px);
+  /* 减去顶部标题和padding的高度 */
 }
 
 .input-section {
@@ -387,7 +399,8 @@ const handleAnalysis = async () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 400px; /* 设置最小高度，确保图表有足够的显示空间 */
+  min-height: 400px;
+  /* 设置最小高度，确保图表有足够的显示空间 */
 }
 
 .chart-container h3 {
@@ -396,10 +409,12 @@ const handleAnalysis = async () => {
 
 .chart {
   width: 100%;
-  aspect-ratio: 16 / 9; /* 设置宽高比例，保持图表的原始比例 */
+  aspect-ratio: 16 / 9;
+  /* 设置宽高比例，保持图表的原始比例 */
   border: 1px solid #e8e8e8;
   border-radius: 4px;
-  min-height: 350px; /* 设置最小高度，确保图表不被过度压缩 */
+  min-height: 350px;
+  /* 设置最小高度，确保图表不被过度压缩 */
 }
 
 .no-result {
@@ -420,9 +435,10 @@ const handleAnalysis = async () => {
   .input-section {
     max-width: 100%;
   }
-  
+
   .chart {
-    aspect-ratio: 4 / 3; /* 移动端调整为更适合的比例 */
+    aspect-ratio: 4 / 3;
+    /* 移动端调整为更适合的比例 */
   }
 }
 </style>
