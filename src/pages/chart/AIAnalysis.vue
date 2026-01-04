@@ -257,6 +257,11 @@ const handleAnalysis = async () => {
     });
 
     const { code, data, message: resMsg } = initResponse.data;
+    if (code === 401) {
+      message.error(resMsg || '登录过期，请重新登录');
+      router.push('/user/login');
+      return;
+    }
     if (code !== 200 || !data?.taskId) {
       message.error(resMsg || '任务提交失败');
       isLoading.value = false;
