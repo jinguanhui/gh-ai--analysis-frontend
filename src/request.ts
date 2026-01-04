@@ -8,7 +8,7 @@ const myAxios = axios.create({
   // process.env.NODE_ENV === "development"
   //   ? "http://localhost:8124"
   //   : "https://codefather.cn",
-  timeout: 10000,
+  timeout: 100000,
   withCredentials: true,
 });
 

@@ -18,7 +18,7 @@ router.beforeEach(async (to, from, next) => {
   const toUrl = to.fullPath;
 
   // 检查是否需要登录才能访问的页面
-  if (toUrl.startsWith("/admin") || toUrl.startsWith("/user") || toUrl === "/chart") {
+  if (toUrl.startsWith("/admin") || toUrl.startsWith("/user") || toUrl.startsWith ("/chart")) {
     // 检查是否为登录页面
     if (to.path === "/user/login" || to.path === "/user/register") {
       // 如果是登录页面，直接允许访问

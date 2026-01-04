@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { getCurrentUser, userLogout } from "@/api/user";
+import { message } from "ant-design-vue";
 
 export const useLoginUserStore = defineStore("loginUser", () => {
   const loginUser = ref<any>(
@@ -14,6 +15,8 @@ export const useLoginUserStore = defineStore("loginUser", () => {
       loginUser.value = res.data.data;
       // 保存到 localStorage
       localStorage.setItem("loginUser", JSON.stringify(res.data.data));
+    }else{
+      message.error("请登录！");
     }
     // else {
     //   setTimeout(() => {
