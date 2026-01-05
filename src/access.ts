@@ -7,13 +7,6 @@ import { message } from "ant-design-vue";
  */
 router.beforeEach(async (to, from, next) => {
   const loginUserStore = useLoginUserStore();
-  const loginUser = loginUserStore.loginUser;
-
-  // 如果用户信息未初始化且不是获取用户信息的请求，尝试获取用户信息
-  if (to.path !== "/user/login" && to.path !== "/user/register" && loginUser.username === "未登录" ) {
-    await loginUserStore.fetchLoginUser();
-  }
-
   const updatedLoginUser = loginUserStore.loginUser;
   const toUrl = to.fullPath;
 
