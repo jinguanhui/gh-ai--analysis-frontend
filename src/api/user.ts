@@ -25,28 +25,6 @@ export const userLogin = async (params: any) => {
 };
 
 /**
- * 用户注销
- * @param params
- */
-export const userLogout = async (params: any) => {
-  return myAxios.request({
-    url: "/user/logout",
-    method: "POST",
-    data: params,
-  });
-};
-
-/**
- * 获取当前用户
- */
-export const getCurrentUser = async () => {
-  return myAxios.request({
-    url: "/user/current",
-    method: "GET",
-  });
-};
-
-/**
  * 获取用户列表
  * @param username
  */

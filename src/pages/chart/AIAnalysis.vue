@@ -277,7 +277,8 @@ const handleAnalysis = async () => {
       sseUrl = `${myAxios.defaults.baseURL}${sseUrl}`;
     }
     // 解决SSE缓存问题：添加时间戳参数
-    sseUrl = `${sseUrl}?t=${new Date().getTime()}`;
+    const token = localStorage.getItem("token");
+    sseUrl = `${sseUrl}?t=${new Date().getTime()}&token=${token}`;
 
     eventSource = new EventSource(sseUrl);
     console.log('SSE连接已建立：', sseUrl);
