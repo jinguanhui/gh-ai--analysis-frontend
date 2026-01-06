@@ -13,6 +13,16 @@ export const userRegister = async (params: any) => {
 };
 
 /**
+ * 用户登出
+ */
+export const userLogout = async () => {
+  return myAxios.request({
+    url: "/user/logout",
+    method: "POST",
+  });
+};
+
+/**
  * 用户登录
  * @param params
  */

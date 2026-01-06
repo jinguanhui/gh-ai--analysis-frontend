@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { message } from "ant-design-vue";
 import router from "@/router";
+import { userLogout } from "@/api/user";
 
 export const useLoginUserStore = defineStore("loginUser", () => {
   const loginUser = ref<any>(
@@ -11,14 +12,14 @@ export const useLoginUserStore = defineStore("loginUser", () => {
   // 登出
   async function doLogout() {
     try {
+      // 调用后端登出接口，将refreshToken从cookie中清除
+      await userLogout();
       // 清除本地登录状态
       loginUser.value = { username: "未登录" };
       // 清除 localStorage 中的用户信息
       localStorage.removeItem("loginUser");
       // 清除 localStorage 中的 token
       localStorage.removeItem("token");
-      // 清除refreshToken
-      localStorage.removeItem("refreshToken");
       // 跳转到登录页面
       router.push("/user/login");
     } catch (error) {
@@ -27,7 +28,6 @@ export const useLoginUserStore = defineStore("loginUser", () => {
       loginUser.value = { username: "未登录" };
       localStorage.removeItem("loginUser");
       localStorage.removeItem("token");
-      localStorage.removeItem("refreshToken");
       // 跳转到登录页面
       router.push("/user/login");
     }
@@ -38,9 +38,8 @@ export const useLoginUserStore = defineStore("loginUser", () => {
     loginUser.value = newLoginUser;
     // 保存到 localStorage
     localStorage.setItem("loginUser", JSON.stringify(newLoginUser));
-    if (newLoginUser.token && newLoginUser.refreshToken) {
+    if (newLoginUser.token) {
       localStorage.setItem("token", newLoginUser.token);
-      localStorage.setItem("refreshToken", newLoginUser.refreshToken);
     }
   }
 

@@ -465,7 +465,7 @@ const handleAnalysis = async () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 400px;
+  min-height: 800px;
 }
 
 .chart-container h3 {
@@ -477,7 +477,7 @@ const handleAnalysis = async () => {
   aspect-ratio: 16 / 9;
   border: 1px solid #e8e8e8;
   border-radius: 4px;
-  min-height: 350px;
+  min-height: 500px;
 }
 
 .no-result {

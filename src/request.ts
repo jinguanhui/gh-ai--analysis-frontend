@@ -9,6 +9,11 @@ const myAxios = axios.create({
   withCredentials: true,
 });
 
+// 用于标记是否正在刷新token
+let isRefreshing = false;
+// 用于存储等待刷新token的请求队列
+let requests:any[] = [];
+
 // Add a request interceptor
 myAxios.interceptors.request.use(
   function (config) {
@@ -39,26 +44,78 @@ myAxios.interceptors.response.use(
     if (data.code === 40100 || data.code === 401) {
       // 不是获取用户信息接口，或者不是登录页面，则跳转到登录页面
       if (
-        !response.request.responseURL.includes("user/current") &&
         !window.location.pathname.includes("/user/login")
       ) {
         // 清除本地存储的token和用户信息
-        localStorage.removeItem("token");
-        window.location.href = `/user/login?redirect=${window.location.href}`;
+        // localStorage.removeItem("token");
+        // window.location.href = `/user/login?redirect=${window.location.href}`;
+        myAxios.post("/user/refreshToken").then((res) => {
+          if (res.data.code === 200) {
+            localStorage.setItem("token", res.data.data);
+          }
+        });
       }
     }
     return response;
   },
-  function (error) {
-    // Any status codes that falls outside the range of 2xx cause this function to trigger
-    // Do something with response error
-    // 处理401错误
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
+  async function (error) {
+    const { response } = error;
+    // 处理401状态码（token失效）
+    if (response && response.status === 401 ) {
+      // 如果不是登录页面，则尝试刷新token
       if (!window.location.pathname.includes("/user/login")) {
-        window.location.href = `/user/login?redirect=${window.location.href}`;
+        const originalRequest = error.config;
+        
+        // 如果正在刷新token，则将请求加入队列
+        if (isRefreshing) {
+          return new Promise((resolve) => {
+            requests.push((token: string) => {
+              originalRequest.headers.token = token;
+              resolve(myAxios(originalRequest));
+            });
+          });
+        }
+        
+        // 标记开始刷新token
+        isRefreshing = true;
+        
+        try {
+          // 调用刷新token接口
+          const refreshResponse = await myAxios.post("/user/refreshToken");
+          
+          if (refreshResponse.data.code === 200 && refreshResponse.data.data) {
+            // 存储新的token
+            const newToken = refreshResponse.data.data;
+            localStorage.setItem("token", newToken);
+            
+            // 更新当前请求的token
+            originalRequest.headers.token = newToken;
+            
+            // 处理队列中的请求
+            requests.forEach(cb => cb(newToken));
+            requests = [];
+            
+            // 重新发送原请求
+            return myAxios(originalRequest);
+          } else {
+            // 刷新token失败，跳转到登录页面
+            localStorage.removeItem("token");
+            window.location.href = `/user/login?redirect=${window.location.href}`;
+            return Promise.reject(error);
+          }
+        } catch (refreshError) {
+          // 刷新token失败，跳转到登录页面
+          localStorage.removeItem("token");
+          window.location.href = `/user/login?redirect=${window.location.href}`;
+          return Promise.reject(refreshError);
+        } finally {
+          // 标记刷新token完成
+          isRefreshing = false;
+        }
       }
     }
+    
+    // 其他错误情况
     return Promise.reject(error);
   }
 );
