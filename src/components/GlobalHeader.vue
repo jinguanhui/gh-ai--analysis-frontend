@@ -37,6 +37,9 @@
                   <a-menu-item v-if="loginUserStore.loginUser.id">
                     <a href="javascript:;">个人中心</a>
                   </a-menu-item>
+                  <a-menu-item v-if="loginUserStore.loginUser.id">
+                    <a href="javascript:;">AccessKey密钥</a>
+                  </a-menu-item>
                   <a-menu-item v-if="loginUserStore.loginUser.id" @click="doLogout">
                     <a>退出</a>
                   </a-menu-item>

@@ -1,4 +1,6 @@
 import axios from "axios";
+import { userLogout } from "@/api/user";
+import { message } from "ant-design-vue";
 
 console.log(process.env.NODE_ENV);
 
@@ -22,6 +24,7 @@ myAxios.interceptors.request.use(
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.token = token;
+      config.headers.set("stamp", new Date().getTime().toString());
     }
     return config;
   },
@@ -41,19 +44,13 @@ myAxios.interceptors.response.use(
     const { data } = response;
     console.log(data);
     // 未登录或token过期
-    if (data.code === 40100 || data.code === 401) {
+    if (data.code !== 200) {
       // 不是获取用户信息接口，或者不是登录页面，则跳转到登录页面
-      if (
-        !window.location.pathname.includes("/user/login")
-      ) {
-        // 清除本地存储的token和用户信息
-        // localStorage.removeItem("token");
-        // window.location.href = `/user/login?redirect=${window.location.href}`;
-        myAxios.post("/user/refreshToken").then((res) => {
-          if (res.data.code === 200) {
-            localStorage.setItem("token", res.data.data);
-          }
-        });
+      if(data.message=== null || data.message === "") {
+        message.error("操作失败");
+      }else {
+
+        message.error(data.message);
       }
     }
     return response;
@@ -61,7 +58,7 @@ myAxios.interceptors.response.use(
   async function (error) {
     const { response } = error;
     // 处理401状态码（token失效）
-    if (response && response.status === 401 ) {
+    if (response && response.status === 401 || response.status === 403 ) {
       // 如果不是登录页面，则尝试刷新token
       if (!window.location.pathname.includes("/user/login")) {
         const originalRequest = error.config;
@@ -100,12 +97,16 @@ myAxios.interceptors.response.use(
           } else {
             // 刷新token失败，跳转到登录页面
             localStorage.removeItem("token");
+            //  移除refreshToken
+            await userLogout();
             window.location.href = `/user/login?redirect=${window.location.href}`;
             return Promise.reject(error);
           }
         } catch (refreshError) {
           // 刷新token失败，跳转到登录页面
-          localStorage.removeItem("token");
+          //  移除refreshToken
+            await userLogout();
+            localStorage.removeItem("token");
           window.location.href = `/user/login?redirect=${window.location.href}`;
           return Promise.reject(refreshError);
         } finally {
