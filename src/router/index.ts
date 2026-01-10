@@ -4,6 +4,7 @@ import UserLoginPage from "@/pages/user/UserLoginPage.vue";
 import UserRegisterPage from "@/pages/user/UserRegisterPage.vue";
 import UserManagePage from "@/pages/admin/UserManagePage.vue";
 import AIAnalysis from "@/pages/chart/AIAnalysis.vue";
+import AccessKeyPage from "@/pages/user/AccessKeyPage.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -30,6 +31,12 @@ const routes: Array<RouteRecordRaw> = [
     path: "/admin/userManage",
     name: "adminUserManage",
     component: UserManagePage,
+  },
+  // 添加AccessKey页面路由
+  {
+    path: "/user/accesskey",
+    name: "userAccessKey",
+    component: AccessKeyPage,
   },
 ];
 

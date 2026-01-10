@@ -43,16 +43,6 @@ myAxios.interceptors.response.use(
 
     const { data } = response;
     console.log(data);
-    // 未登录或token过期
-    if (data.code !== 200) {
-      // 不是获取用户信息接口，或者不是登录页面，则跳转到登录页面
-      if(data.message=== null || data.message === "") {
-        message.error("操作失败");
-      }else {
-
-        message.error(data.message);
-      }
-    }
     return response;
   },
   async function (error) {

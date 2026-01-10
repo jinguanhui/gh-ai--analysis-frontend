@@ -31,14 +31,11 @@
               </a>
               <template #overlay>
                 <a-menu>
-                  <a-menu-item v-if="loginUserStore.loginUser.userRole === 1">
-                    <a href="/admin/userManage">用户管理</a>
-                  </a-menu-item>
                   <a-menu-item v-if="loginUserStore.loginUser.id">
-                    <a href="javascript:;">个人中心</a>
+                    <a>个人中心</a>
                   </a-menu-item>
-                  <a-menu-item v-if="loginUserStore.loginUser.id">
-                    <a href="javascript:;">AccessKey密钥</a>
+                  <a-menu-item v-if="loginUserStore.loginUser.id" @click="doMenuClick({ key: '/user/accesskey' })">
+                    <a>AccessKey密钥</a>
                   </a-menu-item>
                   <a-menu-item v-if="loginUserStore.loginUser.id" @click="doLogout">
                     <a>退出</a>
