@@ -133,6 +133,8 @@ const handleSubmit = async (values: any) => {
   /* 确保容器在小屏幕上也能适应 */
   max-width: 90vw;
   max-height: 90vh;
+  overflow: hidden;
+
 }
 
 /* 左侧插图区域 */
@@ -146,6 +148,9 @@ const handleSubmit = async (values: any) => {
   padding: 0;
   /* 确保图片容器充满整个区域 */
   height: 100%;
+  opacity: 0;
+  transform: translateX(100%);
+  animation: slideRight 0.8s ease forwards;
 }
 
 /* 登录插图 */
@@ -166,6 +171,33 @@ const handleSubmit = async (values: any) => {
   /* 确保表单区域在容器中垂直居中 */
   height: 100%;
   box-sizing: border-box;
+  opacity: 0;
+  transform: translateX(100%);
+  animation: slideLeft 0.8s ease 0.2s forwards; 
+}
+
+
+/* 定义动画 */
+@keyframes slideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* 登录标题 */

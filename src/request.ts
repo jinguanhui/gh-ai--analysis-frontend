@@ -26,6 +26,10 @@ myAxios.interceptors.request.use(
       config.headers.token = token;
       config.headers.set("stamp", new Date().getTime().toString());
     }
+
+    if (config.url?.includes("/chart/gen") ) {
+      config.headers.signature = localStorage.getItem("encryptPublicKey");
+    }
     return config;
   },
   function (error) {
@@ -104,6 +108,11 @@ myAxios.interceptors.response.use(
           isRefreshing = false;
         }
       }
+    }
+
+    if (response.status !== 200) {
+      message.error("操作失败！");
+      return Promise.reject(error);
     }
     
     // 其他错误情况

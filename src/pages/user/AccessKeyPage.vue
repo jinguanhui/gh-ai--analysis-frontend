@@ -1,19 +1,19 @@
 <template>
     <div class="access-key-page">
-        <h1 style="padding-bottom: 30px;">AccessKey管理</h1>
+        <h1 style="padding-bottom: 30px;">EncryptPublicKey管理</h1>
         <div class="alert-item">
-            <a-alert message="AccessKey ID 和 AccessKey Secret 是访问AI服务 API 的密钥，主账号 AccessKey 具有该账户的完全权限风险高，2025年8月18日起主账号 AccessKey
+            <a-alert message="EncryptPublicKey 是访问AI服务 API 的密钥，主账号 EncryptPublicKey 具有该账户的完全权限风险高，2025年8月18日起主账号 AccessKey
                 数量配额将调整为 1 个。" type="info" show-icon />
         </div>
         <div class="alert-item">
-            <a-alert message="AccessKey 在线时间越长，泄露风险越高。您应定期创建新 AccessKey 替代旧的。现在立即检测和治理现有 AccessKey 的使用风险。" type="info"
-                show-icon />
+            <a-alert message="EncryptPublicKey 在线时间越长，泄露风险越高。您应定期创建新 EncryptPublicKey 替代旧的。现在立即检测和治理现有 AccessKey 的使用风险。"
+                type="info" show-icon />
         </div>
-        <h2 style="padding-top: 30px;">AccessKey</h2>
-        <a-alert message="当前账号只能绑定 1 个 AccessKey。" type="warning" show-icon />
+        <h2 style="padding-top: 30px;">EncryptPublicKey</h2>
+        <a-alert message="当前账号只能绑定 1 个 EncryptPublicKey" type="warning" show-icon />
         <!-- 头部按钮区域 -->
         <div class="access-key-header">
-            <a-button type="primary" @click="handleCreateAccessKeyClick">创建AccessKey</a-button>
+            <a-button type="primary" @click="handleCreateAccessKeyClick">创建EncryptPublicKey</a-button>
             <a-button @click="handleSetMaxIdleTime" style="margin-left: 12px;">设置最大闲置时间</a-button>
             <a-button @click="handleRefresh" style="margin-left: auto;">刷新</a-button>
         </div>
@@ -33,14 +33,9 @@
                         {{ '禁用' }}
                     </a-button>
                 </template>
-                <template v-else-if="column.key === 'accessKey'">
+                <template v-else-if="column.key === 'encryptPublicKey'">
                     <a-tooltip>
-                        <span>{{ maskString(record.accessKey) }}</span>
-                    </a-tooltip>
-                </template>
-                <template v-else-if="column.key === 'secretKey'">
-                    <a-tooltip>
-                        <span>{{ maskString(record.secretKey) }}</span>
+                        <span>{{ maskString(record.encryptPublicKey) }}</span>
                     </a-tooltip>
                 </template>
                 <template v-else-if="['lastUsedTime', 'expireTime', 'createTime'].includes(column.key)">
@@ -51,34 +46,23 @@
                 </template>
             </template>
         </a-table>
-        <a-modal v-model:open="createModalVisible" title="创建AccessKey" ok-text="确认" cancel-text="取消"  
-        :mask-closable="false"  :closable="false"
-            @ok="handleCreateAccessKey" @cancel="createModalVisible = false">
+
+        <!-- 创建AccessKey弹窗 -->
+        <a-modal v-model:open="createModalVisible" title="创建EncryptPublicKey" ok-text="确认" cancel-text="取消"
+            :mask-closable="false" :closable="false" @ok="handleCreateAccessKey" @cancel="createModalVisible = false">
             <div class="key-item">
-                <a-alert message="AccessKey:" type="info"
+                <a-alert message="EncryptPublicKey:" type="info"
                     style="display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 4px; margin-right: 8px; font-size: 14px;" />
-                <span class="value">{{ newAccessKey.accessKey }}</span>
+                <span class="value">{{ newAccessKey.encryptPublicKey }}</span>
             </div>
-            <div class="key-item">
-                <a-alert message="SecretKey:" type="info"
-                    style="display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 4px; margin-right: 8px; font-size: 14px;" />
-                <span class="value">{{ newAccessKey.secretKey }}</span>
-            </div>
-            <a-alert message="警告" description="请妥善保存SecretKey，关闭后将无法查看！！！" type="warning" show-icon />
+            <a-alert message="警告" description="请妥善保存EncryptPublicKey，关闭后将无法查看！！！" type="warning" show-icon />
         </a-modal>
 
         <!-- 设置最大闲置时间弹窗 -->
-        <a-modal v-model:open="idleTimeModalVisible" title="设置最大闲置时间（天）" 
-        ok-text="确认" 
-        cancel-text="取消" 
-        @cancel="handleCancelIdleTime"
-        @ok="handleOkIdleTime">
+        <a-modal v-model:open="idleTimeModalVisible" title="设置最大闲置时间（天）" ok-text="确认" cancel-text="取消"
+            @cancel="handleCancelIdleTime" @ok="handleOkIdleTime">
             <a-form-model :model="idleTimeForm" layout="vertical">
-                <a-alert 
-                message="你只能设置最大闲置时间为 30 天" 
-                type="warning" 
-                show-icon
-                style="margin-bottom: 12px;" />
+                <a-alert message="你只能设置最大闲置时间为 30 天" type="warning" show-icon style="margin-bottom: 12px;" />
                 <a-form-model-item label="最大闲置时间">
                     <a-input-number v-model:value="idleTimeForm.maxIdleTime" :min="1" :max="30" />
                 </a-form-model-item>
@@ -94,8 +78,7 @@ import { listAccessKeys, createAccessKeys, disableAccessKeys, deleteAccessKeys, 
 
 // 定义AccessKey接口
 interface AccessKey {
-    accessKey: string;
-    secretKey: string;
+    encryptPublicKey: string;
     status: number;
     lastUsedTime: string;
     expireTime: string;
@@ -104,8 +87,7 @@ interface AccessKey {
 
 // 表格列定义 - 时间列格式已优化
 const columns = [
-    { title: 'AccessKey', dataIndex: 'accessKey', key: 'accessKey' },
-    { title: 'SecretKey', dataIndex: 'secretKey', key: 'secretKey', ellipsis: true },
+    { title: 'EncryptPublicKey', dataIndex: 'encryptPublicKey', key: 'encryptPublicKey' },
     { title: '状态', dataIndex: 'status', key: 'status' },
     { title: '最后使用服务时间', dataIndex: 'lastUsedTime', key: 'lastUsedTime' },
     { title: '过期时间', dataIndex: 'expireTime', key: 'expireTime' },
@@ -118,57 +100,81 @@ const columns = [
 const accessKeys = ref<AccessKey[]>([]);
 const createModalVisible = ref(false);
 const idleTimeModalVisible = ref(false);
-const newAccessKey = ref({ accessKey: '', secretKey: '' });
+const newAccessKey = ref({ encryptPublicKey: '' });
 const idleTimeForm = ref({ maxIdleTime: 30 });
+
+// 定义消息更新的key
+const loadAccessKeyKey = 'loadAccessKey';
 
 // 加载AccessKey列表
 const loadAccessKeys = async () => {
+    // 显示加载中的message，使用key
+    message.loading({ content: '正在加载EncryptPublicKey列表...', key: loadAccessKeyKey });
+
     try {
         const response = await listAccessKeys();
+        
         if (response.data.code === 200) {
             // 确保返回的数据是数组格式
             const data = response.data.data;
             accessKeys.value = Array.isArray(data) ? data : [data];
-            message.success('加载AccessKey列表成功');
+            localStorage.setItem('encryptPublicKey', JSON.stringify(accessKeys.value.map(item => item.encryptPublicKey)));
+            // 使用相同的key更新消息为成功
+            message.success({ content: '加载EncryptPublicKey列表成功', key: loadAccessKeyKey, duration: 2 });
         } else {
-            message.error('加载AccessKey列表失败');
+            // 使用相同的key更新消息为失败
+            message.error({ content: '加载EncryptPublicKey列表失败', key: loadAccessKeyKey, duration: 2 });
             accessKeys.value = [];
         }
     } catch (error) {
-        message.error('加载AccessKey列表失败');
-        console.error('加载AccessKey列表失败:', error);
+        // 使用相同的key更新消息为失败
+        message.error({ content: '加载EncryptPublicKey列表失败', key: loadAccessKeyKey, duration: 2 });
+        console.error('加载EncryptPublicKey列表失败:', error);
+        accessKeys.value = [];
     }
 };
 
 // 创建AccessKey - 点击按钮触发此方法
 const handleCreateAccessKey = async () => {
+
     try {
         createModalVisible.value = false;
-        if (!newAccessKey.value.accessKey || !newAccessKey.value.secretKey) {
-            message.error('AccessKey或SecretKey为空');
+        if (!newAccessKey.value.encryptPublicKey) {
+            message.error('EncryptPublicKey为空');
             return;
-        }else {
-            message.success('AccessKey创建成功');
+        } else {
+            message.success('EncryptPublicKey创建成功');
         }
         loadAccessKeys();
     } catch (error) {
-        message.error('创建AccessKey失败');
-        console.error('创建AccessKey失败:', error);
+        message.error('创建EncryptPublicKey失败');
+        console.error('创建EncryptPublicKey失败:', error);
     }
 };
 
 const handleCreateAccessKeyClick = async () => {
+    // 定义消息更新的key
+    const createKey = 'createAccessKey';
+    
+    // 显示加载中的message，使用key
+    message.loading({ content: '正在创建EncryptPublicKey...', key: createKey });
+
     try {
         const response = await createAccessKeys();
+        
         if (response.data.code === 200) {
             newAccessKey.value = response.data.data;
             createModalVisible.value = true; // 显示弹窗
+            // 使用相同的key更新消息为成功
+            message.success({ content: '创建EncryptPublicKey成功', key: createKey, duration: 2 });
         } else {
-            message.error('创建AccessKey失败: ' + response.data.message);
+            // 使用相同的key更新消息为失败
+            message.error({ content: '创建EncryptPublicKey失败: ' + response.data.message, key: createKey, duration: 2 });
         }
     } catch (error) {
-        message.error('创建AccessKey失败');
-        console.error('创建AccessKey失败:', error);
+        // 使用相同的key更新消息为失败
+        message.error({ content: '创建EncryptPublicKey失败', key: createKey, duration: 2 });
+        console.error('创建EncryptPublicKey失败:', error);
     }
 };
 
@@ -184,19 +190,29 @@ const handleCancelIdleTime = () => {
 
 // 处理设置最大闲置时间的确认按钮
 const handleOkIdleTime = async () => {
-  try {
-    const response = await setAccessKeyIdleTime(idleTimeForm.value.maxIdleTime);
-    if (response.data.code === 200) {
-      message.success('最大闲置时间设置成功');
-      idleTimeModalVisible.value = false;
-      loadAccessKeys(); // 刷新列表以查看更新后的过期时间
-    } else {
-      message.error('设置失败: ' + response.data.message);
+    // 定义消息更新的key
+    const idleTimeKey = 'setIdleTime';
+    
+    // 显示加载中的message，使用key
+    message.loading({ content: '正在设置最大闲置时间...', key: idleTimeKey });
+
+    try {
+        const response = await setAccessKeyIdleTime(idleTimeForm.value.maxIdleTime);
+        
+        if (response.data.code === 200) {
+            // 使用相同的key更新消息为成功
+            message.success({ content: '最大闲置时间设置成功', key: idleTimeKey, duration: 2 });
+            idleTimeModalVisible.value = false;
+            loadAccessKeys(); // 刷新列表以查看更新后的过期时间
+        } else {
+            // 使用相同的key更新消息为失败
+            message.error({ content: '设置失败: ' + response.data.message, key: idleTimeKey, duration: 2 });
+        }
+    } catch (error) {
+        // 使用相同的key更新消息为失败
+        message.error({ content: '设置失败', key: idleTimeKey, duration: 2 });
+        console.error('设置最大闲置时间失败:', error);
     }
-  } catch (error) {
-    message.error('设置失败');
-    console.error('设置最大闲置时间失败:', error);
-  }
 };
 
 // 刷新
@@ -207,16 +223,26 @@ const handleRefresh = () => {
 
 // 禁用
 const handleDisAble = async (record: AccessKey) => {
+    // 定义消息更新的key
+    const disableKey = 'disableAccessKey';
+    
+    // 显示加载中的message，使用key
+    message.loading({ content: '正在禁用EncryptPublicKey...', key: disableKey });
+
     try {
         const response = await disableAccessKeys();
+        
         if (response.data.code === 200) {
-            message.success('操作成功');
+            // 使用相同的key更新消息为成功
+            message.success({ content: '操作成功', key: disableKey, duration: 2 });
             loadAccessKeys();
         } else {
-            message.error('操作失败' + response.data.message);
+            // 使用相同的key更新消息为失败
+            message.error({ content: '操作失败' + response.data.message, key: disableKey, duration: 2 });
         }
     } catch (error) {
-        message.error('操作失败');
+        // 使用相同的key更新消息为失败
+        message.error({ content: '操作失败', key: disableKey, duration: 2 });
         console.error('操作失败:', error);
     }
 };
@@ -232,7 +258,7 @@ const maskString = (str: string): string => {
         return str;
     }
     const start = str.substring(0, 6);
-    const end = str.substring(str.length - 3);
+    const end = str.substring(str.length - 4);
     return `${start}...${end}`;
 };
 

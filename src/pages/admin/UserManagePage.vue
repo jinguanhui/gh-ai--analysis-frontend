@@ -1,14 +1,18 @@
 <template>
   <div id="userManagePage">
-    <a-input-search
-      style="max-width: 320px; margin-bottom: 20px"
-      v-model:value="searchValue"
-      placeholder="输入用户名搜索"
-      enter-button="搜索"
-      size="large"
-      @search="onSearch"
-    />
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <a-input-search
+        style="max-width: 320px;"
+        v-model:value="searchValue"
+        placeholder="输入用户名搜索"
+        enter-button="搜索"
+        size="large"
+        @search="onSearch"
+      />
+      <a-button @click="handleRefresh">刷新</a-button>
+    </div>
     <a-table :columns="columns" :data-source="data">
+      <!-- 表格内容保持不变 -->
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'avatarUrl'">
           <a-image :src="record.avatarUrl" :width="120" />
@@ -38,7 +42,10 @@ import { message } from "ant-design-vue";
 import dayjs from "dayjs";
 
 const searchValue = ref("");
-// 获取数据
+// 数据
+const data = ref([]);
+
+// 搜索功能
 const onSearch = () => {
   fetchData(searchValue.value);
 };
@@ -48,12 +55,19 @@ const doDelete = async (id: string) => {
   if (!id) {
     return;
   }
-  const res = await deleteUser(id);
-  if (res.data.code === 200) {
-    message.success("删除成功");
-    fetchData();
-  } else {
-    message.error("删除失败");
+  const deleteMessageKey = 'deleteUserMessage';
+  message.loading({ content: '删除用户中...', key: deleteMessageKey });
+  try {
+    const res = await deleteUser(id);
+    if (res.data.code === 200) {
+      message.success({ content: '删除成功', key: deleteMessageKey });
+      fetchData();
+    } else {
+      message.error({ content: '删除失败', key: deleteMessageKey });
+    }
+  } catch (error) {
+    message.error({ content: '删除失败', key: deleteMessageKey });
+    console.error('删除用户失败:', error);
   }
 };
 
@@ -92,17 +106,27 @@ const columns = [
   },
 ];
 
-// 数据
-const data = ref([]);
-
 // 获取数据
 const fetchData = async (username = "") => {
-  const res = await searchUsers(username);
-  if (res.data.data) {
-    data.value = res.data.data;
-  } else {
-    message.error("获取数据失败");
+  const fetchMessageKey = 'fetchUserMessage';
+  message.loading({ content: '加载用户列表中...', key: fetchMessageKey });
+  try {
+    const res = await searchUsers(username);
+    if (res.data.data) {
+      data.value = res.data.data;
+      message.success({ content: '加载用户列表成功', key: fetchMessageKey, duration: 1 });
+    } else {
+      message.error({ content: '获取数据失败', key: fetchMessageKey });
+    }
+  } catch (error) {
+    message.error({ content: '获取数据失败', key: fetchMessageKey });
+    console.error('获取用户列表失败:', error);
   }
+};
+
+// 刷新数据
+const handleRefresh = () => {
+  fetchData(searchValue.value);
 };
 
 fetchData();

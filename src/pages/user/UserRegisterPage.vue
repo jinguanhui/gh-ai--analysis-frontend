@@ -47,7 +47,7 @@
           </a-form-item>
           
           <a-form-item
-            name="confirmPassword"
+            name="checkPassword"
             :rules="[
               { required: true, message: '请确认密码' },
               ({ getFieldValue }) => ({
@@ -62,7 +62,7 @@
             class="form-item"
           >
             <a-input-password
-              v-model:value="formState.confirmPassword"
+              v-model:value="formState.checkPassword"
               placeholder="确认密码"
               class="form-input"
             />
@@ -90,13 +90,13 @@ import { useRouter } from "vue-router";
 interface FormState {
   userAccount: string;
   userPassword: string;
-  confirmPassword: string;
+  checkPassword: string;
 }
 
 const formState = reactive<FormState>({
   userAccount: "",
   userPassword: "",
-  confirmPassword: "",
+  checkPassword: "",
 });
 
 const router = useRouter();
@@ -107,7 +107,7 @@ const router = useRouter();
 function reset() {
   formState.userAccount = "";
   formState.userPassword = "";
-  formState.confirmPassword = "";
+  formState.checkPassword = "";
 }
 
 /**
@@ -115,11 +115,9 @@ function reset() {
  * @param values
  */
 const handleSubmit = async (values: any) => {
-  // 移除确认密码字段，因为API通常不需要
-  const { confirmPassword, ...registerData } = values;
   
   try {
-    const res = await userRegister(registerData);
+    const res = await userRegister(values);
     // 注册成功
     if (res.data.code === 200 && res.data.data) {
       message.success("注册成功");
@@ -164,6 +162,7 @@ const handleSubmit = async (values: any) => {
   /* 确保容器在小屏幕上也能适应 */
   max-width: 90vw;
   max-height: 90vh;
+  overflow: hidden;
 }
 
 /* 左侧插图区域 */
@@ -177,6 +176,9 @@ const handleSubmit = async (values: any) => {
   padding: 0;
   /* 确保图片容器充满整个区域 */
   height: 100%;
+  opacity: 0;
+  transform: translateX(100%);
+  animation: slideLeft 0.8s ease forwards;
 }
 
 /* 登录插图 */
@@ -197,6 +199,32 @@ const handleSubmit = async (values: any) => {
   /* 确保表单区域在容器中垂直居中 */
   height: 100%;
   box-sizing: border-box;
+  opacity: 0;
+  transform: translateX(100%);
+  animation: slideRight 0.8s ease 0.2s forwards; 
+}
+
+/* 定义动画 */
+@keyframes slideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* 登录标题 */

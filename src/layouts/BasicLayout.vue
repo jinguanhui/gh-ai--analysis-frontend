@@ -9,7 +9,7 @@
       </a-layout-content>
       <a-layout-footer class="footer">
         <a href="https://github.com/jinguanhui/gh-ai--analysis-frontend" target="_blank">
-          本系统由码农金官辉开发，点击跳转到github
+          本系统代码已开源到github仓库<img class="github" src="../assets/github.png" alt="github" />
         </a>
       </a-layout-footer>
     </a-layout>
@@ -36,6 +36,13 @@ import GlobalHeader from "@/components/GlobalHeader.vue";
   left: 0;
   right: 0;
   padding: 16px;
+}
+
+#basicLayout .footer .github {
+  height: 20px;
+  width: 20px;
+  margin-left: 8px;
+  margin-bottom: 4px;
 }
 
 #basicLayout .content {
