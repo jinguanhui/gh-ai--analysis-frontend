@@ -1,19 +1,19 @@
 <template>
     <div class="access-key-page">
-        <h1 style="padding-bottom: 30px;">EncryptPublicKey管理</h1>
+        <h1 style="padding-bottom: 30px;">PublicKey管理</h1>
         <div class="alert-item">
-            <a-alert message="EncryptPublicKey 是访问AI服务 API 的密钥，主账号 EncryptPublicKey 具有该账户的完全权限风险高，2025年8月18日起主账号 AccessKey
+            <a-alert message="PublicKey 是访问AI服务 API 的密钥，主账号 PublicKey 具有该账户的完全权限风险高，2025年8月18日起主账号 PublicKey
                 数量配额将调整为 1 个。" type="info" show-icon />
         </div>
         <div class="alert-item">
-            <a-alert message="EncryptPublicKey 在线时间越长，泄露风险越高。您应定期创建新 EncryptPublicKey 替代旧的。现在立即检测和治理现有 AccessKey 的使用风险。"
+            <a-alert message="PublicKey 在线时间越长，泄露风险越高。您应定期创建新 PublicKey 替代旧的，建议 PublicKey 的轮换周期为90天。现在立即检测和治理现有 PublicKey 的使用风险。"
                 type="info" show-icon />
         </div>
-        <h2 style="padding-top: 30px;">EncryptPublicKey</h2>
-        <a-alert message="当前账号只能绑定 1 个 EncryptPublicKey" type="warning" show-icon />
+        <h2 style="padding-top: 30px;">PublicKey</h2>
+        <a-alert message="当前账号只能绑定 1 个 PublicKey" type="warning" show-icon />
         <!-- 头部按钮区域 -->
         <div class="access-key-header">
-            <a-button type="primary" @click="handleCreateAccessKeyClick">创建EncryptPublicKey</a-button>
+            <a-button type="primary" @click="handleCreateAccessKeyClick">创建PublicKey</a-button>
             <a-button @click="handleSetMaxIdleTime" style="margin-left: 12px;">设置最大闲置时间</a-button>
             <a-button @click="handleRefresh" style="margin-left: auto;">刷新</a-button>
         </div>
@@ -33,9 +33,9 @@
                         {{ '禁用' }}
                     </a-button>
                 </template>
-                <template v-else-if="column.key === 'encryptPublicKey'">
+                <template v-else-if="column.key === 'publicKey'">
                     <a-tooltip>
-                        <span>{{ maskString(record.encryptPublicKey) }}</span>
+                        <span>{{ maskString(record.publicKey) }}</span>
                     </a-tooltip>
                 </template>
                 <template v-else-if="['lastUsedTime', 'expireTime', 'createTime'].includes(column.key)">
@@ -51,11 +51,11 @@
         <a-modal v-model:open="createModalVisible" title="创建EncryptPublicKey" ok-text="确认" cancel-text="取消"
             :mask-closable="false" :closable="false" @ok="handleCreateAccessKey" @cancel="createModalVisible = false">
             <div class="key-item">
-                <a-alert message="EncryptPublicKey:" type="info"
+                <a-alert message="PublicKey:" type="info"
                     style="display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 4px; margin-right: 8px; font-size: 14px;" />
-                <span class="value">{{ newAccessKey.encryptPublicKey }}</span>
+                <span class="value">{{ newAccessKey.publicKey }}</span>
             </div>
-            <a-alert message="警告" description="请妥善保存EncryptPublicKey，关闭后将无法查看！！！" type="warning" show-icon />
+            <a-alert message="警告" description="请妥善保存PublicKey，关闭后将无法查看！！！" type="warning" show-icon />
         </a-modal>
 
         <!-- 设置最大闲置时间弹窗 -->
@@ -78,7 +78,7 @@ import { listAccessKeys, createAccessKeys, disableAccessKeys, deleteAccessKeys, 
 
 // 定义AccessKey接口
 interface AccessKey {
-    encryptPublicKey: string;
+    publicKey: string;
     status: number;
     lastUsedTime: string;
     expireTime: string;
@@ -87,7 +87,7 @@ interface AccessKey {
 
 // 表格列定义 - 时间列格式已优化
 const columns = [
-    { title: 'EncryptPublicKey', dataIndex: 'encryptPublicKey', key: 'encryptPublicKey' },
+    { title: 'PublicKey', dataIndex: 'publicKey', key: 'publicKey' },
     { title: '状态', dataIndex: 'status', key: 'status' },
     { title: '最后使用服务时间', dataIndex: 'lastUsedTime', key: 'lastUsedTime' },
     { title: '过期时间', dataIndex: 'expireTime', key: 'expireTime' },
@@ -100,7 +100,7 @@ const columns = [
 const accessKeys = ref<AccessKey[]>([]);
 const createModalVisible = ref(false);
 const idleTimeModalVisible = ref(false);
-const newAccessKey = ref({ encryptPublicKey: '' });
+const newAccessKey = ref({ publicKey: '' });
 const idleTimeForm = ref({ maxIdleTime: 30 });
 
 // 定义消息更新的key
@@ -109,7 +109,7 @@ const loadAccessKeyKey = 'loadAccessKey';
 // 加载AccessKey列表
 const loadAccessKeys = async () => {
     // 显示加载中的message，使用key
-    message.loading({ content: '正在加载EncryptPublicKey列表...', key: loadAccessKeyKey });
+    message.loading({ content: '正在加载PublicKey列表...', key: loadAccessKeyKey });
 
     try {
         const response = await listAccessKeys();
@@ -118,18 +118,18 @@ const loadAccessKeys = async () => {
             // 确保返回的数据是数组格式
             const data = response.data.data;
             accessKeys.value = Array.isArray(data) ? data : [data];
-            localStorage.setItem('encryptPublicKey', JSON.stringify(accessKeys.value.map(item => item.encryptPublicKey)));
+            localStorage.setItem('publicKeys', JSON.stringify(accessKeys.value.map(item => item.publicKey)));
             // 使用相同的key更新消息为成功
-            message.success({ content: '加载EncryptPublicKey列表成功', key: loadAccessKeyKey, duration: 2 });
+            message.success({ content: '加载PublicKey列表成功', key: loadAccessKeyKey, duration: 2 });
         } else {
             // 使用相同的key更新消息为失败
-            message.error({ content: '加载EncryptPublicKey列表失败', key: loadAccessKeyKey, duration: 2 });
+            message.error({ content: '加载PublicKey列表失败', key: loadAccessKeyKey, duration: 2 });
             accessKeys.value = [];
         }
     } catch (error) {
         // 使用相同的key更新消息为失败
-        message.error({ content: '加载EncryptPublicKey列表失败', key: loadAccessKeyKey, duration: 2 });
-        console.error('加载EncryptPublicKey列表失败:', error);
+        message.error({ content: '加载PublicKey列表失败', key: loadAccessKeyKey, duration: 2 });
+        console.error('加载PublicKey列表失败:', error);
         accessKeys.value = [];
     }
 };
@@ -139,16 +139,16 @@ const handleCreateAccessKey = async () => {
 
     try {
         createModalVisible.value = false;
-        if (!newAccessKey.value.encryptPublicKey) {
-            message.error('EncryptPublicKey为空');
+        if (!newAccessKey.value.publicKey) {
+            message.error('PublicKey为空');
             return;
         } else {
-            message.success('EncryptPublicKey创建成功');
+            message.success('PublicKey创建成功');
         }
         loadAccessKeys();
     } catch (error) {
-        message.error('创建EncryptPublicKey失败');
-        console.error('创建EncryptPublicKey失败:', error);
+        message.error('创建PublicKey失败');
+        console.error('创建PublicKey失败:', error);
     }
 };
 
@@ -157,24 +157,25 @@ const handleCreateAccessKeyClick = async () => {
     const createKey = 'createAccessKey';
     
     // 显示加载中的message，使用key
-    message.loading({ content: '正在创建EncryptPublicKey...', key: createKey });
+    message.loading({ content: '正在创建PublicKey...', key: createKey });
 
     try {
         const response = await createAccessKeys();
         
         if (response.data.code === 200) {
-            newAccessKey.value = response.data.data;
+            newAccessKey.value.publicKey = response.data.data.publicKey;
             createModalVisible.value = true; // 显示弹窗
             // 使用相同的key更新消息为成功
-            message.success({ content: '创建EncryptPublicKey成功', key: createKey, duration: 2 });
+            localStorage.setItem('publicKey', response.data.data.publicKey);
+            message.success({ content: '创建PublicKey成功', key: createKey, duration: 2 });
         } else {
             // 使用相同的key更新消息为失败
-            message.error({ content: '创建EncryptPublicKey失败: ' + response.data.message, key: createKey, duration: 2 });
+            message.error({ content: '创建PublicKey失败: ' + response.data.message, key: createKey, duration: 2 });
         }
     } catch (error) {
         // 使用相同的key更新消息为失败
-        message.error({ content: '创建EncryptPublicKey失败', key: createKey, duration: 2 });
-        console.error('创建EncryptPublicKey失败:', error);
+        message.error({ content: '创建PublicKey失败', key: createKey, duration: 2 });
+        console.error('创建PublicKey失败:', error);
     }
 };
 
@@ -227,7 +228,7 @@ const handleDisAble = async (record: AccessKey) => {
     const disableKey = 'disableAccessKey';
     
     // 显示加载中的message，使用key
-    message.loading({ content: '正在禁用EncryptPublicKey...', key: disableKey });
+    message.loading({ content: '正在禁用PublicKey...', key: disableKey });
 
     try {
         const response = await disableAccessKeys();

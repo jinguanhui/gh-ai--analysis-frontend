@@ -22,9 +22,11 @@ myAxios.interceptors.request.use(
     // Do something before request is sent
     // 添加token到请求头
     const token = localStorage.getItem("token");
+    config.headers.set("stamp", new Date().getTime().toString());
+    config.headers.nonce = Math.random().toString(36).substring(4);
     if (token) {
       config.headers.token = token;
-      config.headers.set("stamp", new Date().getTime().toString());
+      //  随机数
     }
 
     if (config.url?.includes("/chart/gen") ) {

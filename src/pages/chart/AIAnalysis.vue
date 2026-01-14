@@ -76,12 +76,10 @@
 
           <div v-if="isLoading">
             <a-progress :stroke-color="{
-            from: '#108ee9',
-            to: '#87d068',
-            }" 
-          :percent=percentProcess 
-          status="active" />
-          <p class="progress-tip">分析进度：{{ info }}</p>
+              from: '#108ee9',
+              to: '#87d068',
+            }" :percent=percentProcess status="active" />
+            <p class="progress-tip">分析进度：{{ info }}</p>
           </div>
 
 
@@ -103,6 +101,7 @@ import myAxios from '@/request';
 import { message } from 'ant-design-vue';
 import { useLoginUserStore } from '@/store/useLoginUserStore';
 import ProgressBar from '@/src/components/ProcessBar.vue';
+import { encryptWithAES, encryptWithRSA, generateAESKey, keyToString, stringToRSAPublicKey } from '@/utils/EncryptionUtils';
 
 // 获取路由和用户状态
 const router = useRouter();
@@ -243,17 +242,32 @@ const handleAnalysis = async () => {
   closeSSE(); // 先关闭已有SSE连接
 
   try {
-    // 1. 构造表单数据
+    // 1. 分离文件和文本参数
     const formData = new FormData();
-    formData.append('file', fileList.value[0]);
-    formData.append('name', chartName.value);
-    formData.append('goal', analysisTarget.value);
-    formData.append('chartType', chartType.value);
+    const file = fileList.value[0];
+    const textParams = {
+      name: chartName.value,
+      goal: analysisTarget.value,
+      chartType: chartType.value
+    };
 
-    // 2. 第一步：提交任务，获取taskId
+    // 保持文件原始格式，不加密
+    formData.append('file', file);
+
+    // 将文本参数用AES加密
+    const key = generateAESKey();
+    const encryptedData = encryptWithAES(JSON.stringify(textParams), key);
+    const publicKey:any = localStorage.getItem("publicKey");
+    const encryptedKey = encryptWithRSA(key, publicKey);
+
+    // 添加加密参数到表单
+    formData.append('encryptedKey', encryptedKey);
+    formData.append('encryptedData', encryptedData);
+
+    // 2. 提交任务
     const initResponse = await myAxios.post('/chart/gen', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 30000 // 延长超时时间，适配文件上传
+      timeout: 30000
     });
 
     const { code, data, message: resMsg } = initResponse.data;
