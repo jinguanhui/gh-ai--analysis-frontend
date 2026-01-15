@@ -18,12 +18,12 @@
           <div class="input-group">
             <label>图表类型</label>
             <a-select v-model:value="chartType" placeholder="请选择图表类型" allowClear>
-              <a-select-option value="line">折线图</a-select-option>
-              <a-select-option value="bar">柱状图</a-select-option>
-              <a-select-option value="pie">饼图</a-select-option>
-              <a-select-option value="scatter">散点图</a-select-option>
-              <a-select-option value="area">面积图</a-select-option>
-              <a-select-option value="radar">雷达图</a-select-option>
+              <a-select-option value="折线图">折线图</a-select-option>
+              <a-select-option value="柱状图">柱状图</a-select-option>
+              <a-select-option value="饼图">饼图</a-select-option>
+              <a-select-option value="散点图">散点图</a-select-option>
+              <a-select-option value="面积图">面积图</a-select-option>
+              <a-select-option value="雷达图">雷达图</a-select-option>
             </a-select>
           </div>
 
@@ -257,7 +257,7 @@ const handleAnalysis = async () => {
     // 将文本参数用AES加密
     const key = generateAESKey();
     const encryptedData = encryptWithAES(JSON.stringify(textParams), key);
-    const publicKey:any = localStorage.getItem("publicKey");
+    const publicKey: any = localStorage.getItem("publicKey");
     const encryptedKey = encryptWithRSA(key, publicKey);
 
     // 添加加密参数到表单
@@ -292,7 +292,7 @@ const handleAnalysis = async () => {
     }
     // 解决SSE缓存问题：添加时间戳参数
     const token = localStorage.getItem("token");
-    sseUrl = `${sseUrl}?t=${new Date().getTime()}&token=${token}`;
+    sseUrl = `${sseUrl}?token=${token}`;
 
     eventSource = new EventSource(sseUrl);
     console.log('SSE连接已建立：', sseUrl);
@@ -316,8 +316,16 @@ const handleAnalysis = async () => {
             // 渲染图表
             if (progressData.data.genChart) {
               const chartOption = typeof progressData.data.genChart === 'string'
-                ? JSON.parse(progressData.data.genChart)
+                ? (() => {
+                  const cleanedGenChart = progressData.data.genChart.replace(/\n/g, '').replace(/\s+/g, ' ');
+                  const parseFunc = new Function(`return ${cleanedGenChart}`);
+                  return parseFunc();
+                })()
                 : progressData.data.genChart;
+                // 移除图表标题
+                if (chartOption && typeof chartOption === 'object' && 'title' in chartOption) {
+                  delete chartOption.title;
+                }
               nextTick(() => {
                 initChart();
                 if (myChart) {

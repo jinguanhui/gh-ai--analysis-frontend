@@ -56,7 +56,7 @@
 
 <script lang="ts" setup>
 import { h, ref, computed, onMounted, onUnmounted } from "vue";
-import { CrownOutlined, HomeOutlined, DownOutlined, BarChartOutlined } from "@ant-design/icons-vue";
+import { CrownOutlined, HomeOutlined, DownOutlined, BarChartOutlined, PieChartOutlined } from "@ant-design/icons-vue";
 import { MenuProps, message } from "ant-design-vue";
 import { useRouter } from "vue-router";
 import { useLoginUserStore } from "@/store/useLoginUserStore";
@@ -133,6 +133,12 @@ const items = computed<MenuProps["items"]>(() => {
       icon: () => h(BarChartOutlined),
       label: "AI分析",
       title: "AI分析",
+    },
+    {
+      key: "/chart/chartManage",
+      icon: () => h(PieChartOutlined),
+      label: "图表管理",
+      title: "图表管理",
     }
   ];
 
