@@ -49,6 +49,18 @@ export const searchUsers = async (username: any) => {
 };
 
 /**
+ * 获取单个用户
+ * @param username
+ */
+export const searchUserOne = async () => {
+  return myAxios.request({
+    url: "/user/getone",
+    method: "GET",
+  });
+};
+
+
+/**
  * 删除用户
  * @param id
  */

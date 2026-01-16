@@ -31,7 +31,7 @@
               </a>
               <template #overlay>
                 <a-menu>
-                  <a-menu-item v-if="loginUserStore.loginUser.id">
+                  <a-menu-item v-if="loginUserStore.loginUser.id" @click="doMenuClick({ key: '/user/center' })">
                     <a>个人中心</a>
                   </a-menu-item>
                   <a-menu-item v-if="loginUserStore.loginUser.id" @click="doMenuClick({ key: '/user/accesskey' })">
@@ -91,13 +91,13 @@ const doLogout = async () => {
 // 点击菜单后的路由跳转事件
 const doMenuClick = ({ key }: { key: string }) => {
   // 检查是否为需要登录的页面
-  if (key.startsWith('/admin')) {
-    if (!loginUserStore.loginUser.id || loginUserStore.loginUser.userRole !== 1) {
-      message.error("没有权限");
-      router.push('/user/login');
-      return;
-    }
-  }
+  // if (key.startsWith('/admin')) {
+  //   if (!loginUserStore.loginUser.id || loginUserStore.loginUser.userRole !== 1) {
+  //     message.error("没有权限");
+  //     router.push('/user/login');
+  //     return;
+  //   }
+  // }
   
   router.push({
     path: key,
@@ -154,18 +154,6 @@ const items = computed<MenuProps["items"]>(() => {
       });
     }
   }
-
-  // // 添加外部链接
-  // baseItems.push({
-  //   key: "others",
-  //   label: h(
-  //     "a",
-  //     { href: "https://www.codefather.cn", target: "_blank" },
-  //     "编程导航"
-  //   ),
-  //   title: "编程导航",
-  // });
-
   return baseItems;
 });
 </script>
