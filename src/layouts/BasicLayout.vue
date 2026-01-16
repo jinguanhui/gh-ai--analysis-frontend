@@ -2,7 +2,7 @@
   <div id="basicLayout">
     <a-layout>
       <a-layout-header class="header">
-        <GlobalHeader />
+        <keep-alive><GlobalHeader /></keep-alive>
       </a-layout-header>
       <a-layout-content class="content">
         <router-view />

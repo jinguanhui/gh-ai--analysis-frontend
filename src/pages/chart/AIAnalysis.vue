@@ -7,17 +7,17 @@
         <a-card title="分析设置" :bordered="false">
           <div class="input-group">
             <label>图表名称</label>
-            <a-input v-model:value="chartName" placeholder="请输入图表名称" />
+            <a-input v-model:value="chartAnalysisStore.chartName" placeholder="请输入图表名称" />
           </div>
 
           <div class="input-group">
             <label>分析目标</label>
-            <a-textarea v-model:value="analysisTarget" placeholder="请输入您希望分析的目标，例如：销售额趋势分析、用户行为分析等" :rows="4" />
+            <a-textarea v-model:value="chartAnalysisStore.analysisTarget" placeholder="请输入您希望分析的目标，例如：销售额趋势分析、用户行为分析等" :rows="4" />
           </div>
 
           <div class="input-group">
             <label>图表类型</label>
-            <a-select v-model:value="chartType" placeholder="请选择图表类型" allowClear>
+            <a-select v-model:value="chartAnalysisStore.chartType" placeholder="请选择图表类型" allowClear>
               <a-select-option value="折线图">折线图</a-select-option>
               <a-select-option value="柱状图">柱状图</a-select-option>
               <a-select-option value="饼图">饼图</a-select-option>
@@ -29,7 +29,7 @@
 
           <div class="input-group">
             <label>上传Excel文件</label>
-            <a-upload :fileList="fileList" :beforeUpload="beforeUpload" :remove="handleRemove" accept=".xlsx,.xls"
+            <a-upload :fileList="chartAnalysisStore.fileList" :beforeUpload="beforeUpload" :remove="handleRemove" accept=".xlsx,.xls"
               :maxCount="1">
               <a-button>
                 <upload-outlined></upload-outlined>
@@ -52,20 +52,20 @@
       <!-- 右侧结果区域 -->
       <div class="result-section">
         <a-card title="分析结果" :bordered="false">
-          <!-- 进度条区域：优先显示圆形进度条，完成后显示结果 -->
-          <!-- <div v-if="percentProcess < 100 && percentProcess > 0" class="progress-wrapper">
-            <a-progress type="circle" :stroke-color="{
-              '0%': '#108ee9',
-              '100%': '#87d068',
-            }" :percent="percentProcess" :width="120" />
-            <p class="progress-tip">分析进度：{{ info }}</p>
-          </div> -->
+          <!-- 进度条区域 -->
+          <div v-if="isLoading">
+            <a-progress :stroke-color="{
+              from: '#108ee9',
+              to: '#87d068',
+            }" :percent="chartAnalysisStore.percentProcess" status="active" />
+            <p class="progress-tip">分析进度：{{ chartAnalysisStore.info }}</p>
+          </div>
 
           <!-- 使用v-show替代v-if，确保DOM元素始终存在 -->
-          <div v-show="analysisResult" class="result-content">
+          <div v-show="chartAnalysisStore.analysisResult" class="result-content">
             <div class="result-text">
               <h3>分析报告</h3>
-              <p>{{ analysisResult }}</p>
+              <p>{{ chartAnalysisStore.analysisResult }}</p>
             </div>
 
             <div class="chart-container">
@@ -74,16 +74,7 @@
             </div>
           </div>
 
-          <div v-if="isLoading">
-            <a-progress :stroke-color="{
-              from: '#108ee9',
-              to: '#87d068',
-            }" :percent=percentProcess status="active" />
-            <p class="progress-tip">分析进度：{{ info }}</p>
-          </div>
-
-
-          <div v-show="!analysisResult && percentProcess === 0" class="no-result">
+          <div v-show="!chartAnalysisStore.analysisResult && chartAnalysisStore.percentProcess === 0" class="no-result">
             <a-empty description="暂无分析结果，请在左侧设置分析参数并点击开始分析" />
           </div>
         </a-card>
@@ -100,26 +91,19 @@ import * as echarts from 'echarts';
 import myAxios from '@/request';
 import { message } from 'ant-design-vue';
 import { useLoginUserStore } from '@/store/useLoginUserStore';
-import ProgressBar from '@/src/components/ProcessBar.vue';
-import { encryptWithAES, encryptWithRSA, generateAESKey, keyToString, stringToRSAPublicKey } from '@/utils/EncryptionUtils';
+import { useChartAnalysisStore } from '@/store/useChartAnalysisStore';
+import { encryptWithAES, encryptWithRSA, generateAESKey } from '@/utils/EncryptionUtils';
 
 // 获取路由和用户状态
 const router = useRouter();
 const loginUserStore = useLoginUserStore();
+const chartAnalysisStore = useChartAnalysisStore(); // 使用新的store
 
-// 定义响应式数据
-const chartName = ref('');
-const analysisTarget = ref('');
-const chartType = ref('');
-const fileList = ref<any[]>([]);
+// 定义本地响应式数据（仅用于加载状态和图表实例）
 const isLoading = ref(false);
-const analysisResult = ref('');
 const chartRef = ref<HTMLElement | null>(null);
 let myChart: echarts.ECharts | null = null;
-const percentProcess = ref(0);
 let eventSource: EventSource | null = null; // 声明SSE连接实例
-// 模拟后端数据
-const info = ref('');
 
 // 初始化图表的函数
 const initChart = () => {
@@ -161,11 +145,16 @@ onMounted(() => {
   // 延迟一下确保DOM已完全渲染
   nextTick(() => {
     initChart();
+    // 如果store中有图表配置，重新渲染图表
+    if (chartAnalysisStore.chartOption && myChart) {
+      myChart.setOption(chartAnalysisStore.chartOption, true);
+      myChart.resize();
+    }
   });
 });
 
 // 监听analysisResult变化，确保图表已初始化
-watch(analysisResult, (newVal) => {
+watch(() => chartAnalysisStore.analysisResult, (newVal) => {
   if (newVal) {
     // 分析结果出现时，确保图表已初始化
     nextTick(() => {
@@ -178,7 +167,7 @@ watch(analysisResult, (newVal) => {
   }
 });
 
-// 组件卸载时清理事件监听
+// 组件卸载时清理事件监听，但不清除store中的数据
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
   if (myChart) {
@@ -190,14 +179,7 @@ onUnmounted(() => {
 
 // 重置逻辑
 const handleReset = () => {
-  chartName.value = '';
-  analysisTarget.value = '';
-  chartType.value = '';
-  fileList.value = [];
-  analysisResult.value = '';
-  percentProcess.value = 0; // 重置进度
-  info.value = ''; // 重置任务信息
-  closeSSE(); // 重置时关闭SSE
+  chartAnalysisStore.resetAll(); // 使用store的重置方法
   if (myChart) myChart.setOption({}, true); // 清空图表
   message.success('已重置所有参数');
 };
@@ -218,37 +200,40 @@ const beforeUpload = (file: any) => {
     return false;
   }
 
-  fileList.value = [file];
+  chartAnalysisStore.fileList = [file]; // 更新store中的文件列表
   return false; // 阻止默认上传行为
 };
 
 const handleRemove = (file: any) => {
-  fileList.value = [];
+  chartAnalysisStore.fileList = []; // 清空store中的文件列表
 };
 
 // 核心：AI分析 + SSE进度监听
 const handleAnalysis = async () => {
+  const { chartName, analysisTarget, chartType, fileList } = chartAnalysisStore;
+  
   // 基础校验
-  if (!chartName.value || !analysisTarget.value || !chartType.value || fileList.value.length === 0) {
+  if (!chartName || !analysisTarget || !chartType || fileList.length === 0) {
     message.error('请完善所有分析参数');
     return;
   }
 
   // 重置状态
   isLoading.value = true;
-  analysisResult.value = '';
-  percentProcess.value = 0;
-  info.value = '';
+  chartAnalysisStore.analysisResult = '';
+  chartAnalysisStore.percentProcess = 0;
+  chartAnalysisStore.info = '';
+  chartAnalysisStore.chartOption = null;
   closeSSE(); // 先关闭已有SSE连接
 
   try {
     // 1. 分离文件和文本参数
     const formData = new FormData();
-    const file = fileList.value[0];
+    const file = fileList[0];
     const textParams = {
-      name: chartName.value,
-      goal: analysisTarget.value,
-      chartType: chartType.value
+      name: chartName,
+      goal: analysisTarget,
+      chartType: chartType
     };
 
     // 保持文件原始格式，不加密
@@ -306,13 +291,13 @@ const handleAnalysis = async () => {
         // 进度更新：严格限制0-100范围
         if (progressData.code === 200 && progressData.data?.taskProcess !== undefined) {
           const newProgress = Math.min(Math.max(progressData.data.taskProcess, 0), 100);
-          percentProcess.value = newProgress;
-          info.value = progressData.data.taskInfo;
+          chartAnalysisStore.percentProcess = newProgress; // 更新store中的进度
+          chartAnalysisStore.info = progressData.data.taskInfo; // 更新store中的进度信息
           isLoading.value = newProgress < 100; // 进度100%时关闭loading
 
           // 任务完成：关闭SSE + 渲染结果
           if (newProgress >= 100) {
-            analysisResult.value = progressData.data.genResult || 'AI分析完成！';
+            chartAnalysisStore.analysisResult = progressData.data.genResult || 'AI分析完成！';
             // 渲染图表
             if (progressData.data.genChart) {
               const chartOption = typeof progressData.data.genChart === 'string'
@@ -322,10 +307,11 @@ const handleAnalysis = async () => {
                   return parseFunc();
                 })()
                 : progressData.data.genChart;
-                // 移除图表标题
-                if (chartOption && typeof chartOption === 'object' && 'title' in chartOption) {
-                  delete chartOption.title;
-                }
+              // 移除图表标题
+              if (chartOption && typeof chartOption === 'object' && 'title' in chartOption) {
+                delete chartOption.title;
+              }
+              chartAnalysisStore.chartOption = chartOption; // 保存图表配置到store
               nextTick(() => {
                 initChart();
                 if (myChart) {
@@ -339,16 +325,16 @@ const handleAnalysis = async () => {
           }
         } else if (progressData.code === 500) {
           message.error(progressData.message || '任务执行失败');
-          percentProcess.value = 0;
-          info.value = '';
+          chartAnalysisStore.percentProcess = 0;
+          chartAnalysisStore.info = '';
           closeSSE();
           isLoading.value = false;
         }
       } catch (e) {
         console.error('解析SSE消息失败:', e);
         message.error('进度更新异常，已停止监听');
-        percentProcess.value = 0;
-        info.value = '';
+        chartAnalysisStore.percentProcess = 0;
+        chartAnalysisStore.info = '';
         closeSSE();
         isLoading.value = false;
       }
@@ -362,19 +348,14 @@ const handleAnalysis = async () => {
         console.log('SSE连接正常关闭');
       } else {
         message.error('进度监听断开，请检查后端服务或刷新页面重试');
-        percentProcess.value = 0;
-        info.value = '';
+        chartAnalysisStore.percentProcess = 0;
+        chartAnalysisStore.info = '';
         closeSSE();
       }
       isLoading.value = false;
     };
 
     // SSE连接关闭监听
-    // eventSource.onclose = () => {
-    //   console.log('SSE连接已关闭');
-    //   isLoading.value = false;
-    // };
-
     eventSource.addEventListener('close', () => {
       console.log('SSE连接已关闭');
       isLoading.value = false;
@@ -383,8 +364,8 @@ const handleAnalysis = async () => {
   } catch (error: any) {
     console.error('分析请求失败:', error);
     message.error(error.response?.data?.message || '请求异常，请稍后重试');
-    percentProcess.value = 0;
-    info.value = '';
+    chartAnalysisStore.percentProcess = 0;
+    chartAnalysisStore.info = '';
     closeSSE();
     isLoading.value = false;
   }

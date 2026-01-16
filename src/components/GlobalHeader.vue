@@ -16,11 +16,11 @@
           :forceSubMenuRender="true"
         />
       </a-col>
-      <a-col flex="100px">
+      <a-col flex="auto">
         <div class="user-login-status">
           <template v-if="loginUserStore.loginUser.id">
             <!-- 用户已登录，显示下拉菜单 -->
-            <a-dropdown placement="bottom" :trigger="['click']">
+            <a-dropdown placement="bottom">
               <a class="ant-dropdown-link" @click.prevent>
                 <div class="user-info">
                   <img v-if="loginUserStore.loginUser.avatarUrl" :src="loginUserStore.loginUser.avatarUrl" alt="avatar"
@@ -192,6 +192,10 @@ const items = computed<MenuProps["items"]>(() => {
 .username {
   margin-left: 8px;
   margin-right: 4px;
+  white-space: nowrap; /* 确保用户名不换行 */
+  overflow: hidden; /* 防止内容溢出 */
+  text-overflow: ellipsis; /* 长文本显示省略号 */
+  max-width: 100px; /* 可选：设置最大宽度 */
 }
 
 .avatar {
