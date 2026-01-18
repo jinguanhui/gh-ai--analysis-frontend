@@ -21,14 +21,12 @@
           <template v-if="loginUserStore.loginUser.id">
             <!-- 用户已登录，显示下拉菜单 -->
             <a-dropdown placement="bottom">
-              <a class="ant-dropdown-link" @click.prevent>
                 <div class="user-info">
                   <img v-if="loginUserStore.loginUser.avatarUrl" :src="loginUserStore.loginUser.avatarUrl" alt="avatar"
                     class="avatar" />
                   <a-spin v-else />
                   <span class="username">{{ loginUserStore.loginUser.username ?? "无名" }}</span>
                 </div>
-              </a>
               <template #overlay>
                 <a-menu>
                   <a-menu-item v-if="loginUserStore.loginUser.id" @click="doMenuClick({ key: '/user/center' })">

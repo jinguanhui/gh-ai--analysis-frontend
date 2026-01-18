@@ -64,7 +64,7 @@
             <a-form-model :model="idleTimeForm" layout="vertical">
                 <a-alert message="你只能设置最大闲置时间为 30 天" type="warning" show-icon style="margin-bottom: 12px;" />
                 <a-form-model-item label="最大闲置时间">
-                    <a-input-number v-model:value="idleTimeForm.maxIdleTime" :min="1" :max="30" />
+                    <a-input-number v-model:value="idleTimeForm.maxIdleTime" :min="1" :max="90" />
                 </a-form-model-item>
             </a-form-model>
         </a-modal>

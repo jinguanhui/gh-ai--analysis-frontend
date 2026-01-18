@@ -38,13 +38,23 @@ export const userLogin = async (params: any) => {
  * 获取用户列表
  * @param username
  */
-export const searchUsers = async (username: any) => {
+export const searchUsers = async (params: any) => {
   return myAxios.request({
     url: "/user/search",
-    method: "GET",
-    params: {
-      username,
-    },
+    method: "POST",
+    data: params,
+  });
+};
+
+/**
+ * 更新用户
+ * @param username
+ */
+export const updateUser = async (params: any) => {
+  return myAxios.request({
+    url: "/user/update",
+    method: "POST",
+    data: params,
   });
 };
 

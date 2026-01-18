@@ -47,6 +47,11 @@ myAxios.interceptors.response.use(
     // Do something with response data
     console.log(response);
 
+    if (response.data.code !== 200) {
+      message.error(response.data.message);
+      return Promise.reject(response.data);
+    }
+
     const { data } = response;
     console.log(data);
     return response;

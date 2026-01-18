@@ -30,7 +30,7 @@ router.beforeEach(async (to, from, next) => {
     if (toUrl.startsWith("/admin")) {
       if (!updatedLoginUser || updatedLoginUser.userRole !== 1) {
         message.error("没有权限");
-        next(`/user/login?redirect=${to.fullPath}`);
+        // next(`/user/login?redirect=${to.fullPath}`);
         return;
       }
     }
@@ -39,7 +39,7 @@ router.beforeEach(async (to, from, next) => {
     if (toUrl.startsWith("/chart")) {
       if (!updatedLoginUser) {
         message.error("请先登录");
-        next(`/user/login?redirect=${to.fullPath}`);
+        // next(`/user/login?redirect=${to.fullPath}`);
         return;
       }
     }
