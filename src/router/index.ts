@@ -18,6 +18,7 @@ const routes: Array<RouteRecordRaw> = [
     path: "/chart/analysis",
     name: "aiAnalysis",
     component: AIAnalysis,
+    
   },
   {
     path: "/chart/chartManage",

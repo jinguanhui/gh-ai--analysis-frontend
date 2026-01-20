@@ -1,234 +1,532 @@
 <template>
-  <div id="userSelfCenter">
-    <a-card title="个人中心" class="user-center-card">
-      <div v-if="isLoading" class="loading-container">
-        <a-spin size="large" />
-        <span class="loading-text">加载用户信息中...</span>
-      </div>
-      
-      <div v-else-if="error" class="error-container">
-        <a-alert type="error" message="加载失败" description="获取用户信息失败，请稍后重试" show-icon />
-      </div>
-      
-      <div v-else>
-        <!-- 用户头像和基本信息 -->
-        <div class="user-basic-info">
-          <div class="avatar-container">
-            <a-avatar :size="120" :src="userInfo.avatarUrl || ''" icon="user" />
+  <div class="user-self-center">
+    <div class="main-content">
+      <!-- 左侧内容区 -->
+      <div class="left-content">
+        <!-- 我的账号卡片 -->
+        <a-card title="我的账号" :bordered="false" class="account-card">
+          <!-- 用户基本信息 -->
+          <div class="user-basic-info">
+            <div class="avatar-section">
+              <a-avatar :size="80" :src="userInfo.avatarUrl" @click="handleAvatarClick">
+                <UserOutlined />
+              </a-avatar>
+            </div>
+            <div class="info-section">
+              <div class="login-info">
+                <div class="login-name">
+                  用户名: {{ userInfo.username || '未设置' }}
+                  <a-button
+                    type="text"
+                    size="small"
+                    @click="handleEditField('username')"
+                    class="edit-btn"
+                  >
+                    <EditOutlined />
+                  </a-button>
+                </div>
+                <div class="account-id">
+                  账号ID: {{ userInfo.id || '无' }}
+                  <a-button
+                    type="text"
+                    size="small"
+                    class="copy-btn"
+                    @click="handleCopyId"
+                  >
+                    <CopyOutlined />
+                  </a-button>
+                </div>
+                <div class="user-account">
+                  用户账号: {{ userInfo.userAccount || '未设置' }}
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="basic-info-content">
-            <h2>{{ userInfo.username || userInfo.userAccount }}</h2>
-            <p class="user-role">{{ userInfo.userRole === 1 ? '管理员' : '普通用户' }}</p>
-            <p class="user-status">{{ userInfo.userStatus === 0 ? '正常' : '禁用' }}</p>
+
+          <!-- 个人信息 -->
+          <div class="personal-info">
+            <a-row :gutter="16" class="personal-row">
+              <a-col :span="12">
+                <div class="info-item">
+                  <div class="item-label">性别</div>
+                  <div class="item-value">
+                    <span class="value">{{ getGenderText(userInfo.gender) }}</span>
+                    <a-button
+                      type="text"
+                      size="small"
+                      @click="handleEditField('gender')"
+                      class="action-btn"
+                    >
+                      <EditOutlined />
+                    </a-button>
+                  </div>
+                </div>
+              </a-col>
+              <a-col :span="12">
+                <div class="info-item">
+                  <div class="item-label">邮箱</div>
+                  <div class="item-value">
+                    <span class="value">{{ userInfo.email || '未设置' }}</span>
+                    <a-button
+                      type="text"
+                      size="small"
+                      @click="handleEditField('email')"
+                      class="action-btn"
+                    >
+                      <EditOutlined />
+                    </a-button>
+                  </div>
+                </div>
+              </a-col>
+              <a-col :span="12">
+                <div class="info-item">
+                  <div class="item-label">手机号</div>
+                  <div class="item-value">
+                    <span class="value">{{ userInfo.phone || '未设置' }}</span>
+                    <a-button
+                      type="text"
+                      size="small"
+                      @click="handleEditField('phone')"
+                      class="action-btn"
+                    >
+                      <EditOutlined />
+                    </a-button>
+                  </div>
+                </div>
+              </a-col>
+              <a-col :span="12">
+                <div class="info-item">
+                  <div class="item-label">注册时间</div>
+                  <div class="item-value">
+                    <span class="value">{{ formatDate(userInfo.createTime) }}</span>
+                  </div>
+                </div>
+              </a-col>
+            </a-row>
           </div>
+        </a-card>
+
+      </div>
+
+    </div>
+
+    <!-- 编辑模态框 -->
+    <a-modal
+      v-model:open="editModalVisible"
+      title="编辑信息"
+      @ok="handleModalOk"
+      @cancel="handleModalCancel"
+      ok-text="确认" cancel-text="取消"
+    >
+      <a-form :model="editForm" layout="vertical">
+        <a-form-item label="用户名" v-if="currentEditField === 'username'">
+          <a-input v-model:value="editForm.username" />
+        </a-form-item>
+        <a-form-item label="性别" v-if="currentEditField === 'gender'">
+          <a-select v-model:value="editForm.gender">
+            <a-select-option value="">请选择性别</a-select-option>
+            <a-select-option :value="0">女</a-select-option>
+            <a-select-option :value="1">男</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item label="邮箱" v-if="currentEditField === 'email'">
+          <a-input v-model:value="editForm.email" />
+        </a-form-item>
+        <a-form-item label="手机号" v-if="currentEditField === 'phone'">
+          <a-input v-model:value="editForm.phone" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 头像上传模态框 -->
+    <a-modal
+      v-model:open="avatarModalVisible"
+      title="更换头像"
+      @ok="handleAvatarOk"
+      @cancel="handleAvatarCancel"
+      ok-text="确认" cancel-text="取消"
+    >
+      <div class="avatar-upload-container">
+        <div class="avatar-preview">
+          <a-avatar :size="120" :src="avatarPreviewUrl">
+            <UserOutlined />
+          </a-avatar>
         </div>
-        
-        <!-- 用户详细信息表格 -->
-        <div class="user-details">
-          <h3>用户详细信息</h3>
-          <a-table 
-            :columns="columns" 
-            :data-source="userDetailsData" 
-            :pagination="false" 
-            bordered
-            size="middle"
-          />
+        <div class="avatar-upload-btn">
+          <a-upload
+            name="avatar"
+            :before-upload="handleBeforeUpload"
+            :show-upload-list="false"
+            accept="image/*"
+          >
+            <a-button>
+              <UploadOutlined /> 选择头像
+            </a-button>
+          </a-upload>
         </div>
       </div>
-    </a-card>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { searchUserOne, updateUser } from '@/api/user';
+import {
+  CopyOutlined,
+  EditOutlined,
+  UploadOutlined,
+  UserOutlined
+} from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
-import { searchUserOne } from '@/api/user';
-import { useLoginUserStore } from '@/store/useLoginUserStore';
+import { onMounted, reactive, ref } from 'vue';
 
-// 定义用户信息类型
 interface UserInfo {
-  id: number;
-  username: string | null;
+  id?: number;
+  username: string;
   userAccount: string;
-  avatarUrl: string | null;
-  gender: number | null;
-  userPassword: string | null;
-  email: string | null;
-  userStatus: number;
-  phone: string | null;
-  createTime: string;
-  updateTime: string | null;
-  isDelete: number | null;
-  userRole: number;
-  salt: string | null;
-  invokeCount: number | null;
-  token: string | null;
+  avatarUrl?: string;
+  gender?: number;
+  userPassword?: string;
+  email?: string;
+  userStatus?: number;
+  phone?: string;
+  createTime?: Date;
+  updateTime?: Date;
+  isDelete?: number;
+  userRole?: number;
+  salt?: string;
+  invokeCount?: number;
+  token?: string;
 }
 
-// 状态管理
-const loginUserStore = useLoginUserStore();
-const userInfo = ref<UserInfo>({ ...loginUserStore.loginUser });
-const isLoading = ref(true);
-const error = ref(false);
+// 用户信息
+const userInfo = reactive<UserInfo>({
+  username: '',
+  userAccount: '',
+});
 
-// 表格列定义
-const columns = [
-  {
-    title: '字段名称',
-    dataIndex: 'field',
-    key: 'field',
-    width: 150,
-    align: 'center'
-  },
-  {
-    title: '字段值',
-    dataIndex: 'value',
-    key: 'value',
-    ellipsis: true
+// 编辑模态框相关
+const editModalVisible = ref(false);
+const currentEditField = ref<string>('');
+const editForm = reactive<Partial<UserInfo>>({
+});
+
+// 头像上传相关
+const avatarModalVisible = ref(false);
+const avatarPreviewUrl = ref<string | undefined>(undefined);
+const selectedAvatarFile = ref<File | null>(null);
+
+// 复制账号ID
+const handleCopyId = () => {
+  if (userInfo.id) {
+    navigator.clipboard.writeText(userInfo.id.toString())
+      .then(() => {
+        message.success('账号ID已复制到剪贴板');
+      })
+      .catch(err => {
+        console.error('复制失败:', err);
+        message.error('复制失败，请手动复制');
+      });
   }
-];
+};
 
-// 处理用户详细信息数据
-const userDetailsData = ref([
-  { field: '用户ID', value: userInfo.value.id, key: 'id' },
-  { field: '用户名', value: userInfo.value.username || '未设置', key: 'username' },
-  { field: '账号', value: userInfo.value.userAccount, key: 'userAccount' },
-  { field: '性别', value: userInfo.value.gender === null ? '未设置' : (userInfo.value.gender === 1 ? '男' : '女'), key: 'gender' },
-  { field: '邮箱', value: userInfo.value.email || '未设置', key: 'email' },
-  { field: '手机号', value: userInfo.value.phone || '未设置', key: 'phone' },
-  { field: '状态', value: userInfo.value.userStatus === 0 ? '正常' : '禁用', key: 'userStatus' },
-  { field: '角色', value: userInfo.value.userRole === 1 ? '管理员' : '普通用户', key: 'userRole' },
-  { field: '注册时间', value: userInfo.value.createTime ? new Date(userInfo.value.createTime).toLocaleString() : '未知', key: 'createTime' },
-  { field: '更新时间', value: userInfo.value.updateTime ? new Date(userInfo.value.updateTime).toLocaleString() : '未知', key: 'updateTime' },
-  { field: '调用次数', value: userInfo.value.invokeCount || 0, key: 'invokeCount' }
-]);
+// 处理头像点击
+const handleAvatarClick = () => {
+  avatarModalVisible.value = true;
+  avatarPreviewUrl.value = userInfo.avatarUrl;
+};
+
+// 处理头像上传前的验证
+const handleBeforeUpload = (file: File) => {
+  const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+  if (!isJpgOrPng) {
+    message.error('请选择JPG或PNG格式的图片');
+    return false;
+  }
+  const isLt2M = file.size / 1024 / 1024 < 2;
+  if (!isLt2M) {
+    message.error('图片大小不能超过2MB');
+    return false;
+  }
+  // 预览图片
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    avatarPreviewUrl.value = e.target?.result as string;
+  };
+  reader.readAsDataURL(file);
+  selectedAvatarFile.value = file;
+  return false; // 阻止自动上传，我们将在点击确定按钮时手动上传
+};
+
+// 处理头像上传确定
+const handleAvatarOk = async () => {
+  if (!selectedAvatarFile.value) {
+    message.error('请选择头像');
+    return;
+  }
+
+  const updateMessageKey = 'updateAvatarMessage';
+  message.loading({ content: '更新头像中...', key: updateMessageKey });
+
+  try {
+    // 更新用户信息，包含文件和用户数据
+    const response = await updateUser({
+      file: selectedAvatarFile.value,
+      user: { ...userInfo }
+    });
+    
+    if (response.data.code === 200) {
+      // 更新本地用户信息 - 实际项目中应该根据后端返回的头像URL更新
+      // 这里简单使用预览URL作为头像URL
+      userInfo.avatarUrl = avatarPreviewUrl.value;
+      message.success({ content: '头像更新成功', key: updateMessageKey });
+      avatarModalVisible.value = false;
+    } else {
+      message.error({ content: '头像更新失败', key: updateMessageKey });
+    }
+  } catch (error) {
+    console.error('更新头像失败:', error);
+    message.error({ content: '头像更新失败', key: updateMessageKey });
+  }
+};
+
+// 处理头像上传取消
+const handleAvatarCancel = () => {
+  avatarModalVisible.value = false;
+  selectedAvatarFile.value = null;
+};
 
 // 加载用户信息
 const loadUserInfo = async () => {
-  isLoading.value = true;
-  error.value = false;
+  const loadMessageKey = 'loadUserInfoMessage';
+  message.loading({ content: '加载用户信息中...', key: loadMessageKey });
+  
   try {
     const response = await searchUserOne();
-    if (response.code === 200) {
-      // 更新用户信息，不包含敏感字段
-      const { userPassword, salt, token, ...safeUserInfo } = response.data;
-      userInfo.value = safeUserInfo;
+    if (response.data.code === 200 && response.data.data) {
+      // 确保所有字段都被正确赋值
+      const data = response.data.data;
+      userInfo.id = data.id;
+      userInfo.username = data.username || '';
+      userInfo.userAccount = data.userAccount || '';
+      userInfo.avatarUrl = data.avatarUrl;
+      userInfo.gender = data.gender;
+      userInfo.email = data.email;
+      userInfo.userStatus = data.userStatus;
+      userInfo.phone = data.phone;
+      userInfo.createTime = data.createTime;
+      userInfo.userRole = data.userRole;
+      userInfo.invokeCount = data.invokeCount;
       
-      // 更新本地存储
-      loginUserStore.setLoginUser(safeUserInfo);
-      
-      // 更新表格数据
-      updateUserDetailsData();
-      
-      message.success('加载用户信息成功');
+      message.success({ content: '加载用户信息成功', key: loadMessageKey });
     } else {
-      message.error(`加载失败: ${response.message}`);
-      error.value = true;
+      message.error({ content: '获取用户信息失败', key: loadMessageKey });
     }
-  } catch (err) {
-    console.error('加载用户信息出错:', err);
-    message.error('加载用户信息失败，请稍后重试');
-    error.value = true;
-  } finally {
-    isLoading.value = false;
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+    message.error({ content: '获取用户信息失败', key: loadMessageKey });
   }
 };
 
-// 更新表格数据
-const updateUserDetailsData = () => {
-  userDetailsData.value = [
-    { field: '用户ID', value: userInfo.value.id, key: 'id' },
-    { field: '用户名', value: userInfo.value.username || '未设置', key: 'username' },
-    { field: '账号', value: userInfo.value.userAccount, key: 'userAccount' },
-    { field: '性别', value: userInfo.value.gender === null ? '未设置' : (userInfo.value.gender === 1 ? '男' : '女'), key: 'gender' },
-    { field: '邮箱', value: userInfo.value.email || '未设置', key: 'email' },
-    { field: '手机号', value: userInfo.value.phone || '未设置', key: 'phone' },
-    { field: '状态', value: userInfo.value.userStatus === 0 ? '正常' : '禁用', key: 'userStatus' },
-    { field: '角色', value: userInfo.value.userRole === 1 ? '管理员' : '普通用户', key: 'userRole' },
-    { field: '注册时间', value: userInfo.value.createTime ? new Date(userInfo.value.createTime).toLocaleString() : '未知', key: 'createTime' },
-    { field: '更新时间', value: userInfo.value.updateTime ? new Date(userInfo.value.updateTime).toLocaleString() : '未知', key: 'updateTime' },
-    { field: '调用次数', value: userInfo.value.invokeCount || 0, key: 'invokeCount' }
-  ];
+// 处理编辑字段
+const handleEditField = (field: string) => {
+  currentEditField.value = field;
+  // 初始化编辑表单
+  if (userInfo[field as keyof UserInfo] !== undefined) {
+    editForm[field as keyof UserInfo] = userInfo[field as keyof UserInfo];
+  }
+  editModalVisible.value = true;
 };
 
-// 组件挂载时加载用户信息
+// 处理模态框确定
+const handleModalOk = async () => {
+  const updateMessageKey = 'updateUserInfoMessage';
+  message.loading({ content: '更新信息中...', key: updateMessageKey });
+  
+  try {
+    // 更新用户信息
+    const updateData = { [currentEditField.value]: editForm[currentEditField.value] };
+    const response = await updateUser({ ...userInfo, ...updateData });
+    
+    if (response.data.code === 200) {
+      // 更新本地数据
+      Object.assign(userInfo, updateData);
+      message.success({ content: '更新成功', key: updateMessageKey });
+      editModalVisible.value = false;
+    } else {
+      message.error({ content: '更新失败', key: updateMessageKey });
+    }
+  } catch (error) {
+    console.error('更新失败:', error);
+    message.error({ content: '更新失败', key: updateMessageKey });
+  }
+};
+
+// 处理模态框取消
+const handleModalCancel = () => {
+  editModalVisible.value = false;
+};
+
+// 格式化日期
+const formatDate = (date?: Date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  return d.toLocaleString();
+};
+
+// 性别文本转换
+const getGenderText = (gender?: number) => {
+  if (gender === undefined) return '未设置';
+  return gender === 0 ? '女' : gender === 1 ? '男' : '未知';
+};
+
+// 页面加载时获取用户信息
 onMounted(() => {
   loadUserInfo();
 });
 </script>
 
 <style scoped>
-#userSelfCenter {
+.user-self-center {
+  padding: 20px;
+  background-color: #f0f2f5;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+.main-content {
+  display: flex;
+  gap: 20px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
   padding: 20px 0;
 }
 
-.user-center-card {
-  max-width: 800px;
-  margin: 0 auto;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.left-content {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.loading-container {
+/* 头像上传相关样式 */
+.avatar-upload-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 60px 0;
+  gap: 20px;
 }
 
-.loading-text {
-  margin-top: 16px;
-  color: #666;
+.avatar-preview {
+  margin-bottom: 20px;
 }
 
-.error-container {
-  margin: 20px 0;
+.avatar-upload-btn {
+  text-align: center;
 }
 
+/* 用户基本信息 */
 .user-basic-info {
   display: flex;
-  align-items: center;
-  margin-bottom: 32px;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 24px;
   padding-bottom: 20px;
   border-bottom: 1px solid #f0f0f0;
 }
 
-.avatar-container {
-  margin-right: 32px;
+.avatar-section {
+  margin-right: 20px;
+  cursor: pointer;
 }
 
-.basic-info-content h2 {
-  margin: 0 0 8px 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #333;
+.info-section {
+  flex: 1;
 }
 
-.user-role, .user-status {
-  margin: 4px 0;
+.login-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-name,
+.account-id,
+.user-account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.edit-btn,
+.copy-btn {
+  padding: 0;
+  margin-left: 4px;
+}
+
+/* 个人信息 */
+.personal-info {
+  margin-bottom: 24px;
+}
+
+.personal-row {
+  margin-bottom: 16px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px dashed #f0f0f0;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.item-label {
   color: #666;
+  font-size: 14px;
 }
 
-.user-details h3 {
-  margin: 0 0 16px 0;
-  font-size: 18px;
+.item-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.value {
   font-weight: 500;
-  color: #333;
 }
 
-/* 响应式设计 */
+.status-0 {
+  color: #ff4d4f;
+}
+
+.status-1 {
+  color: #52c41a;
+}
+
+.action-btn {
+  padding: 0;
+  color: #1890ff;
+}
+
+/* 响应式布局 */
 @media (max-width: 768px) {
-  .user-center-card {
-    margin: 0 16px;
+  .main-content {
+    flex-direction: column;
   }
   
   .user-basic-info {
     flex-direction: column;
-    text-align: center;
-  }
-  
-  .avatar-container {
-    margin-right: 0;
-    margin-bottom: 16px;
+    align-items: flex-start;
   }
 }
 </style>

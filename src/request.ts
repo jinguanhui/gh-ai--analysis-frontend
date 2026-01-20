@@ -58,8 +58,8 @@ myAxios.interceptors.response.use(
   },
   async function (error) {
     const { response } = error;
-    // 处理401状态码（token失效）
-    if (response && response.status === 401 || response.status === 403 ) {
+    // 处理401状态码（token失效）- 修复了条件判断的语法错误
+    if (response && (response.status === 401 || response.status === 403)) {
       // 如果不是登录页面，则尝试刷新token
       if (!window.location.pathname.includes("/user/login")) {
         const originalRequest = error.config;
@@ -79,6 +79,7 @@ myAxios.interceptors.response.use(
         
         try {
           // 调用刷新token接口
+          console.log("token已过期，使用refreshToken刷新token！");
           const refreshResponse = await myAxios.post("/user/refreshToken");
           
           if (refreshResponse.data.code === 200 && refreshResponse.data.data) {

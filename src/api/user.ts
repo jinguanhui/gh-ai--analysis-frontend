@@ -48,14 +48,29 @@ export const searchUsers = async (params: any) => {
 
 /**
  * 更新用户
- * @param username
+ * @param params
  */
 export const updateUser = async (params: any) => {
-  return myAxios.request({
-    url: "/user/update",
-    method: "POST",
-    data: params,
-  });
+  // 如果包含文件，使用FormData格式上传
+  if (params.file) {
+    const formData = new FormData();
+    formData.append('file', params.file);
+    formData.append('user', JSON.stringify(params.user));
+    
+    return myAxios.request({
+      url: "/user/update",
+      method: "POST",
+      data: formData,
+      // 不要手动设置 Content-Type，让 axios 自动处理
+    });
+  } else {
+    // 普通更新，保持原有逻辑
+    return myAxios.request({
+      url: "/user/update",
+      method: "POST",
+      data: params,
+    });
+  }
 };
 
 /**

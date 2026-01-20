@@ -57,12 +57,8 @@
               <a-row :gutter="16">
                 <a-col :span="12">
                   <a-form-item label="时间范围">
-                    <a-range-picker 
-                      v-model:value="createTimeRange"
-                      format="YYYY-MM-DD HH:mm:ss"
-                      show-time
-                      style="width: 100%;" 
-                    />
+                    <a-range-picker v-model:value="createTimeRange" format="YYYY-MM-DD HH:mm:ss" show-time
+                      style="width: 100%;" />
                   </a-form-item>
                 </a-col>
               </a-row>
@@ -77,25 +73,30 @@
         </a-form>
       </a-card>
 
-      <a-table :columns="columns" :data-source="data">
+      <a-table :columns="columns" :data-source="data" :scroll="{ x: 2000 }">
         <template #bodyCell="{ column, record, index }">
+          <!-- 确保只渲染头像，不显示链接 -->
           <template v-if="column.dataIndex === 'avatarUrl'">
-            <a-image v-if="record.avatarUrl" :src="record.avatarUrl" :width="120" />
-            <span v-else>无</span>
+            <div style="display: flex; justify-content: center; align-items: center;">
+              <a-avatar :size="80" :src="record.avatarUrl">
+                <UserOutlined />
+              </a-avatar>
+            </div>
           </template>
-          <template v-if="column.dataIndex === 'id'">
+          <!-- 其他列的渲染保持不变 -->
+          <template v-else-if="column.dataIndex === 'id'">
             <!-- id从1开始增加 -->
             {{ index + 1 }}
           </template>
           <template v-else-if="column.dataIndex === 'gender'">
             <span v-if="record.gender === 0">男</span>
             <span v-else-if="record.gender === 1">女</span>
-            <span v-else>无</span>
+            <span v-else>未设置</span>
           </template>
           <template v-else-if="column.dataIndex === 'userStatus'">
             <a-tag color="green" v-if="record.userStatus === 0">正常</a-tag>
             <a-tag color="red" v-else-if="record.userStatus === 1">禁用</a-tag>
-            <span v-else>无</span>
+            <span v-else>未设置</span>
           </template>
           <template v-else-if="column.dataIndex === 'userRole'">
             <div v-if="record.userRole === 1">
@@ -113,18 +114,14 @@
             <a-button danger style="margin-left: 8px;" @click="doDelete(record.id)">删除</a-button>
           </template>
           <template v-else>
-            {{ record[column.dataIndex] !== null && record[column.dataIndex] !== undefined ? record[column.dataIndex] : '无' }}
+            {{ record[column.dataIndex] !== null && record[column.dataIndex] !== undefined ? record[column.dataIndex] :
+            '未设置' }}
           </template>
         </template>
       </a-table>
 
       <!-- 编辑用户对话框 -->
-      <a-modal
-        v-model:open="editModalVisible"
-        title="编辑用户"
-        @ok="handleEditSubmit"
-        @cancel="handleEditCancel"
-      >
+      <a-modal v-model:open="editModalVisible" title="编辑用户" @ok="handleEditSubmit" @cancel="handleEditCancel">
         <a-form :model="editForm" layout="vertical">
           <a-form-item label="用户名">
             <a-input v-model:value="editForm.username" placeholder="请输入用户名" />
@@ -170,6 +167,8 @@ import dayjs from "dayjs";
 // 导入完整的Ant Design Vue中文本地化配置
 import antdLocale from 'ant-design-vue/es/locale/zh_CN';
 import 'dayjs/locale/zh-cn';
+// 导入用户图标组件
+import { UserOutlined } from '@ant-design/icons-vue';
 
 dayjs.locale('zh-cn');
 
@@ -288,54 +287,79 @@ const handleReset = () => {
   fetchData();
 };
 
+// 表格列配置 - 添加align: 'center'使列名和内容居中
 const columns = [
   {
     title: "id",
     dataIndex: "id",
+    width: 40,
+    align: 'center'
   },
   {
     title: "用户名",
     dataIndex: "username",
+    width: 120,
+    align: 'center'
   },
   {
     title: "账号",
     dataIndex: "userAccount",
+    width: 120,
+    align: 'center'
   },
   {
     title: "头像",
     dataIndex: "avatarUrl",
+    width: 100,
+    align: 'center',
   },
   {
     title: "性别",
     dataIndex: "gender",
+    width: 80,
+    align: 'center'
   },
   {
     title: "邮箱",
     dataIndex: "email",
+    width: 180,
+    align: 'center'
   },
   {
     title: "用户状态",
     dataIndex: "userStatus",
+    width: 100,
+    align: 'center'
   },
   {
     title: "手机号",
     dataIndex: "phone",
+    width: 120,
+    align: 'center'
   },
   {
     title: "创建时间",
     dataIndex: "createTime",
+    width: 180,
+    align: 'center'
   },
   {
     title: "用户角色",
     dataIndex: "userRole",
+    width: 100,
+    align: 'center'
   },
   {
     title: "调用次数",
     dataIndex: "invokeCount",
+    width: 120,
+    align: 'center'
   },
   {
     title: "操作",
     key: "action",
+    width: 200,
+    align: 'center'
   },
 ];
 
@@ -356,7 +380,7 @@ const fetchData = async () => {
       beginTime: createTimeRange.value[0] ? createTimeRange.value[0] : undefined,
       endTime: createTimeRange.value[1] ? createTimeRange.value[1] : undefined
     };
-    
+
     const res = await searchUsers(userQueryDto);
     if (res.data.data) {
       data.value = res.data.data;
@@ -373,3 +397,14 @@ const fetchData = async () => {
 // 初始加载数据
 fetchData();
 </script>
+
+<style scoped>
+/* 可以添加一些额外的样式来美化表格 */
+:deep(.ant-table-thead > tr > th) {
+  text-align: center !important;
+}
+
+:deep(.ant-table-tbody > tr > td) {
+  vertical-align: middle;
+}
+</style>
