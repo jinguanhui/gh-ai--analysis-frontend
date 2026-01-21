@@ -54,7 +54,8 @@
         <a-row :gutter="16">
             <!-- 遍历图表列表，每个图表使用卡片包裹 -->
             <a-col :span="12" v-for="chart in chartList" :key="chart.id" style="margin-bottom: 24px;">
-                <a-card :title="chart.name" :bordered="false" class="chart-card">
+                <a-card :title="chart.name" :bordered="false" class="chart-card" @click="goToChartDetail(chart.id)"
+                    style="cursor: pointer;">
                     <!-- 图表信息 -->
                     <div class="chart-info">
                         <div class="info-item">
@@ -94,7 +95,7 @@ import { message } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
 import { useLoginUserStore } from '@/store/useLoginUserStore';
 import * as echarts from 'echarts';
-import { userRegister as getChartList } from '@/api/mychart';
+import { getChartList, getChartById } from '@/api/mychart';
 
 // 获取路由和用户状态
 const router = useRouter();
@@ -119,6 +120,11 @@ const searchForm = ref({
 // 设置图表ref
 const setChartRef = (chartId: number, el: HTMLElement | null) => {
     chartRefs.value[chartId] = el;
+};
+
+// 跳转到图表详情页
+const goToChartDetail = (chartId: number) => {
+    router.push(`/chart/detail/${chartId}`);
 };
 
 // 格式化日期

@@ -7,6 +7,7 @@ import AIAnalysis from "@/pages/chart/AIAnalysis.vue";
 import AccessKeyPage from "@/pages/user/AccessKeyPage.vue";
 import MyChart from "@/pages/chart/MyChart.vue";
 import UserSelfCenter from "@/pages/user/UserSelfCenter.vue";
+import ChartDetail from "@/pages/chart/ChartDetail.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -24,6 +25,11 @@ const routes: Array<RouteRecordRaw> = [
     path: "/chart/chartManage",
     name: "chartManage",
     component: MyChart,
+  },
+  {
+    path: "/chart/detail/:id",
+    name: "chartDetail",
+    component: ChartDetail,
   },
   {
     path: "/user/login",
