@@ -171,6 +171,7 @@
 
 <script setup lang="ts">
 import { searchUserOne, updateUser } from '@/api/user';
+import { useLoginUserStore } from '@/store/useLoginUserStore';
 import {
   CopyOutlined,
   EditOutlined,
@@ -179,6 +180,9 @@ import {
 } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import { onMounted, reactive, ref } from 'vue';
+
+const loginUserStore = useLoginUserStore(); // 创建loginUserStore实例
+
 
 interface UserInfo {
   id?: number;
@@ -279,6 +283,13 @@ const handleAvatarOk = async () => {
       // 更新本地用户信息 - 实际项目中应该根据后端返回的头像URL更新
       // 这里简单使用预览URL作为头像URL
       userInfo.avatarUrl = avatarPreviewUrl.value;
+      
+      // 更新loginUserStore中的头像信息
+      loginUserStore.setLoginUser({
+        ...loginUserStore.loginUser,
+        avatarUrl: avatarPreviewUrl.value
+      });
+      
       message.success({ content: '头像更新成功', key: updateMessageKey });
       avatarModalVisible.value = false;
     } else {
@@ -289,6 +300,7 @@ const handleAvatarOk = async () => {
     message.error({ content: '头像更新失败', key: updateMessageKey });
   }
 };
+
 
 // 处理头像上传取消
 const handleAvatarCancel = () => {
