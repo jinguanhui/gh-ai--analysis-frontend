@@ -3,18 +3,13 @@
     <h1>AI数据分析</h1>
     <a-layout class="ai-analysis-layout">
       <!-- 左侧侧边栏 -->
-      <a-layout-sider
-        v-model:collapsed="collapsed"
-        :width="350"
-        :collapsible="true"
-        :trigger="null"
-        class="input-sider"
-      >
+      <a-layout-sider v-model:collapsed="collapsed" :width="350" :collapsible="true" :trigger="null"
+        class="input-sider">
         <!-- 侧边栏展开时显示的内容 -->
         <div v-if="!collapsed" class="sider-header">
           <span>分析设置</span>
         </div>
-        
+
         <!-- 侧边栏展开时显示的分析设置内容 -->
         <div v-if="!collapsed" class="sider-content">
           <div class="input-group">
@@ -41,7 +36,8 @@
 
           <div class="input-group">
             <label>上传Excel文件</label>
-            <a-upload :fileList="chartAnalysisStore.fileList" :beforeUpload="beforeUpload" :remove="handleRemove" accept=".xlsx,.xls" :maxCount="1">
+            <a-upload :fileList="chartAnalysisStore.fileList" :beforeUpload="beforeUpload" :remove="handleRemove"
+              accept=".xlsx,.xls" :maxCount="1">
               <a-button>
                 <upload-outlined></upload-outlined>
                 选择Excel文件
@@ -58,10 +54,10 @@
             重置
           </a-button>
         </div>
-        
+
         <!-- 侧边栏折叠时显示的图标 -->
-        <div v-else class="sider-collapsed-icon">
-          <upload-outlined style="font-size: 20px; color: #1890ff;" />
+        <div v-else class="sider-collapsed-icon" @click="collapsed = !collapsed">
+          <ToolTwoTone style="font-size: 20px; color: #1890ff;"/>
         </div>
       </a-layout-sider>
 
@@ -107,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { UploadOutlined, MenuUnfoldOutlined, MenuFoldOutlined } from '@ant-design/icons-vue';
+import { UploadOutlined, MenuUnfoldOutlined, MenuFoldOutlined, ToolTwoTone } from '@ant-design/icons-vue';
 import { ref, onMounted, nextTick, watch, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import * as echarts from 'echarts';
@@ -248,7 +244,7 @@ const handleRemove = (file: any) => {
 // 核心：AI分析 + SSE进度监听
 const handleAnalysis = async () => {
   const { chartName, analysisTarget, chartType, fileList } = chartAnalysisStore;
-  
+
   // 基础校验
   if (!chartName || !analysisTarget || !chartType || fileList.length === 0) {
     message.error('请完善所有分析参数');
