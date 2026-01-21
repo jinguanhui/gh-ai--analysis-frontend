@@ -1,10 +1,22 @@
 <template>
   <div class="ai-analysis-container">
     <h1>AI数据分析</h1>
-    <div class="ai-analysis-content">
-      <!-- 左侧输入区域 -->
-      <div class="input-section">
-        <a-card title="分析设置" :bordered="false">
+    <a-layout class="ai-analysis-layout">
+      <!-- 左侧侧边栏 -->
+      <a-layout-sider
+        v-model:collapsed="collapsed"
+        :width="350"
+        :collapsible="true"
+        :trigger="null"
+        class="input-sider"
+      >
+        <!-- 侧边栏展开时显示的内容 -->
+        <div v-if="!collapsed" class="sider-header">
+          <span>分析设置</span>
+        </div>
+        
+        <!-- 侧边栏展开时显示的分析设置内容 -->
+        <div v-if="!collapsed" class="sider-content">
           <div class="input-group">
             <label>图表名称</label>
             <a-input v-model:value="chartAnalysisStore.chartName" placeholder="请输入图表名称" />
@@ -12,7 +24,7 @@
 
           <div class="input-group">
             <label>分析目标</label>
-            <a-textarea v-model:value="chartAnalysisStore.analysisTarget" placeholder="请输入您希望分析的目标，例如：销售额趋势分析、用户行为分析等" :rows="4" />
+            <a-textarea v-model:value="chartAnalysisStore.analysisTarget" placeholder="请输入您希望分析的目标" :rows="4" />
           </div>
 
           <div class="input-group">
@@ -29,8 +41,7 @@
 
           <div class="input-group">
             <label>上传Excel文件</label>
-            <a-upload :fileList="chartAnalysisStore.fileList" :beforeUpload="beforeUpload" :remove="handleRemove" accept=".xlsx,.xls"
-              :maxCount="1">
+            <a-upload :fileList="chartAnalysisStore.fileList" :beforeUpload="beforeUpload" :remove="handleRemove" accept=".xlsx,.xls" :maxCount="1">
               <a-button>
                 <upload-outlined></upload-outlined>
                 选择Excel文件
@@ -46,12 +57,24 @@
           <a-button @click="handleReset" block class="reset-btn" style="margin-top: 10px;">
             重置
           </a-button>
-        </a-card>
-      </div>
+        </div>
+        
+        <!-- 侧边栏折叠时显示的图标 -->
+        <div v-else class="sider-collapsed-icon">
+          <upload-outlined style="font-size: 20px; color: #1890ff;" />
+        </div>
+      </a-layout-sider>
 
       <!-- 右侧结果区域 -->
-      <div class="result-section">
-        <a-card title="分析结果" :bordered="false">
+      <a-layout-content class="result-content">
+        <!-- 侧边栏展开/收起按钮 -->
+        <div class="toggle-btn" @click="collapsed = !collapsed">
+          <a-button type="text" size="large">
+            <component :is="collapsed ? MenuUnfoldOutlined : MenuFoldOutlined" />
+          </a-button>
+        </div>
+
+        <a-card title="分析结果" :bordered="false" class="result-card">
           <!-- 进度条区域 -->
           <div v-if="isLoading">
             <a-progress :stroke-color="{
@@ -78,13 +101,13 @@
             <a-empty description="暂无分析结果，请在左侧设置分析参数并点击开始分析" />
           </div>
         </a-card>
-      </div>
-    </div>
+      </a-layout-content>
+    </a-layout>
   </div>
 </template>
 
 <script setup lang="ts">
-import { UploadOutlined } from '@ant-design/icons-vue';
+import { UploadOutlined, MenuUnfoldOutlined, MenuFoldOutlined } from '@ant-design/icons-vue';
 import { ref, onMounted, nextTick, watch, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import * as echarts from 'echarts';
@@ -93,6 +116,10 @@ import { message } from 'ant-design-vue';
 import { useLoginUserStore } from '@/store/useLoginUserStore';
 import { useChartAnalysisStore } from '@/store/useChartAnalysisStore';
 import { encryptWithAES, encryptWithRSA, generateAESKey } from '@/utils/EncryptionUtils';
+import { Layout } from 'ant-design-vue';
+
+// 解构Layout组件
+const { Sider, Content } = Layout;
 
 // 获取路由和用户状态
 const router = useRouter();
@@ -102,6 +129,7 @@ const chartAnalysisStore = useChartAnalysisStore(); // 使用新的store
 // 定义本地响应式数据（仅用于加载状态和图表实例）
 const isLoading = ref(false);
 const chartRef = ref<HTMLElement | null>(null);
+const collapsed = ref(false); // 侧边栏展开/收起状态
 let myChart: echarts.ECharts | null = null;
 let eventSource: EventSource | null = null; // 声明SSE连接实例
 
@@ -165,6 +193,15 @@ watch(() => chartAnalysisStore.analysisResult, (newVal) => {
       }
     });
   }
+});
+
+// 监听侧边栏状态变化，调整图表大小
+watch(() => collapsed.value, () => {
+  nextTick(() => {
+    if (myChart) {
+      myChart.resize();
+    }
+  });
 });
 
 // 组件卸载时清理事件监听，但不清除store中的数据
@@ -400,32 +437,63 @@ const handleAnalysis = async () => {
 .ai-analysis-container {
   padding: 24px;
   background-color: #f5f5f5;
-  min-height: 150vh;
+  min-height: 100vh;
 }
 
-.ai-analysis-content {
-  display: flex;
-  gap: 24px;
+.ai-analysis-layout {
   margin-top: 16px;
   height: calc(100vh - 80px);
+  overflow: hidden;
 }
 
-.input-section {
-  flex: 1;
-  max-width: 400px;
+.input-sider {
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
 }
 
-.result-section {
-  flex: 2;
-  flex-grow: 1;
+.sider-header {
+  padding: 16px;
+  font-size: 18px;
+  font-weight: 600;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.sider-content {
+  padding: 16px;
+}
+
+/* 侧边栏折叠时的图标样式 */
+.sider-collapsed-icon {
   display: flex;
-  flex-direction: column;
-}
-
-.result-section :deep(.ant-card-body) {
-  display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   height: 100%;
+  cursor: pointer;
+}
+
+.result-content {
+  padding: 0 24px;
+  position: relative;
+  overflow-y: auto;
+}
+
+.toggle-btn {
+  position: absolute;
+  top: 16px;
+  left: 8px;
+  z-index: 1;
+}
+
+.result-card {
+  height: 100%;
+  overflow: hidden;
+}
+
+.result-card :deep(.ant-card-body) {
+  height: calc(100% - 64px);
+  overflow-y: auto;
   padding: 20px;
 }
 
@@ -493,13 +561,18 @@ const handleAnalysis = async () => {
 }
 
 @media (max-width: 768px) {
-  .ai-analysis-content {
-    flex-direction: column;
+  .ai-analysis-layout {
     height: auto;
   }
 
-  .input-section {
-    max-width: 100%;
+  .input-sider {
+    position: static !important;
+    width: 100% !important;
+    height: auto;
+  }
+
+  .result-content {
+    padding: 16px;
   }
 
   .chart {
