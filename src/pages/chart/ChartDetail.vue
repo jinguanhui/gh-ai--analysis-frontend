@@ -29,6 +29,18 @@
                         <span class="info-label">创建时间：</span>
                         <span class="info-value">{{ formatDate(chartDetail.createTime) }}</span>
                     </div>
+                    <!-- 添加图表状态 -->
+                    <div class="info-item">
+                        <span class="info-label">图表状态：</span>
+                        <span class="info-value status-badge" :class="`status-${chartDetail.status}`">
+                            {{ chartDetail.execMessage || getStatusText(chartDetail.status) }}
+                        </span>
+                    </div>
+                    <!-- 添加执行信息 -->
+                    <div v-if="chartDetail.execMessage" class="info-item">
+                        <span class="info-label">执行信息：</span>
+                        <span class="info-value">{{ chartDetail.execMessage }}</span>
+                    </div>
                 </div>
 
                 <!-- 图表展示 -->
@@ -87,6 +99,17 @@ const formatDate = (date: string) => {
         hour: '2-digit',
         minute: '2-digit'
     });
+};
+
+// 获取状态文本
+const getStatusText = (status: string) => {
+    const statusMap: Record<string, string> = {
+        'succeed': '任务成功执行',
+        'wait': '任务等待执行中',
+        'failed': '任务执行失败',
+        'running': '任务正在执行'
+    };
+    return statusMap[status] || status;
 };
 
 // 初始化图表
@@ -188,6 +211,38 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* 状态样式 */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.status-succeed {
+    background-color: #f6ffed;
+    border: 1px solid #b7eb8f;
+    color: #52c41a;
+}
+
+.status-wait {
+    background-color: #e6f7ff;
+    border: 1px solid #91d5ff;
+    color: #1890ff;
+}
+
+.status-failed {
+    background-color: #fff2f0;
+    border: 1px solid #ffccc7;
+    color: #f5222d;
+}
+
+.status-running {
+    background-color: #fffbe6;
+    border: 1px solid #ffe58f;
+    color: #faad14;
+}
+
 .chart-detail-container {
     padding: 24px;
     background-color: #f5f5f5;

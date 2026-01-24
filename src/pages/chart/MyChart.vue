@@ -70,13 +70,32 @@
                             <span class="info-label">创建时间：</span>
                             <span class="info-value">{{ formatDate(chart.createTime) }}</span>
                         </div>
+                        <!-- 添加图表状态 -->
+                        <div class="info-item">
+                            <span class="info-label">图表状态：</span>
+                            <span class="info-value status-badge" :class="`status-${chart.status}`">
+                                {{ chart.execMessage || getStatusText(chart.status) }}
+                            </span>
+                        </div>
+                        <!-- 添加执行信息 -->
+                        <div v-if="chart.execMessage" class="info-item">
+                            <span class="info-label">执行信息：</span>
+                            <span class="info-value">{{ chart.execMessage }}</span>
+                        </div>
                     </div>
 
                     <!-- 图表渲染区域 -->
-                    <div class="chart-preview">
+                    <div v-if="chart.status === 'succeed'" class="chart-preview">
                         <!-- 使用函数式ref来获取每个图表的DOM元素 -->
                         <div :ref="el => setChartRef(chart.id, el)" class="chart-canvas"></div>
                     </div>
+                    <div v-else-if="chart.status === 'failed'">
+                        <a-result status="error" :title="chart.execMessage" />
+                    </div>
+                    <div v-else>
+                        <a-result status="info" :title="chart.execMessage" />
+                    </div>
+
                 </a-card>
             </a-col>
         </a-row>
@@ -138,6 +157,17 @@ const formatDate = (date: string) => {
         hour: '2-digit',
         minute: '2-digit'
     });
+};
+
+// 获取状态文本
+const getStatusText = (status: string) => {
+    const statusMap: Record<string, string> = {
+        'succeed': '任务成功执行',
+        'wait': '任务等待执行中',
+        'failed': '任务执行失败',
+        'running': '任务正在执行'
+    };
+    return statusMap[status] || status;
 };
 
 // 初始化单个图表
@@ -291,6 +321,38 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* 状态样式 */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.status-succeed {
+    background-color: #f6ffed;
+    border: 1px solid #b7eb8f;
+    color: #52c41a;
+}
+
+.status-wait {
+    background-color: #e6f7ff;
+    border: 1px solid #91d5ff;
+    color: #1890ff;
+}
+
+.status-failed {
+    background-color: #fff2f0;
+    border: 1px solid #ffccc7;
+    color: #f5222d;
+}
+
+.status-running {
+    background-color: #fffbe6;
+    border: 1px solid #ffe58f;
+    color: #faad14;
+}
+
 .my-chart-container {
     padding: 24px;
     background-color: #f5f5f5;
