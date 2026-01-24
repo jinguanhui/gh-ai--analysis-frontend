@@ -57,7 +57,7 @@
 
         <!-- 侧边栏折叠时显示的图标 -->
         <div v-else class="sider-collapsed-icon" @click="collapsed = !collapsed">
-          <ToolTwoTone style="font-size: 20px; color: #1890ff;"/>
+          <ToolTwoTone style="font-size: 20px; color: #1890ff;" />
         </div>
       </a-layout-sider>
 
@@ -72,13 +72,8 @@
 
         <a-card title="分析结果" :bordered="false" class="result-card">
           <!-- 进度条区域 -->
-          <div v-if="isLoading">
-            <a-progress :stroke-color="{
-              from: '#108ee9',
-              to: '#87d068',
-            }" :percent="chartAnalysisStore.percentProcess" status="active" />
-            <p class="progress-tip">分析进度：{{ chartAnalysisStore.info }}</p>
-          </div>
+          <ProgressBar :visible="isLoading" :percent="chartAnalysisStore.percentProcess"
+            :info="chartAnalysisStore.info" />
 
           <!-- 使用v-show替代v-if，确保DOM元素始终存在 -->
           <div v-show="chartAnalysisStore.analysisResult" class="result-content">
@@ -113,6 +108,7 @@ import { useLoginUserStore } from '@/store/useLoginUserStore';
 import { useChartAnalysisStore } from '@/store/useChartAnalysisStore';
 import { encryptWithAES, encryptWithRSA, generateAESKey } from '@/utils/EncryptionUtils';
 import { Layout } from 'ant-design-vue';
+import ProgressBar from '@/components/ProgressBar.vue';
 
 // 解构Layout组件
 const { Sider, Content } = Layout;
