@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, onUnmounted } from 'vue';
+import { ref, onMounted, nextTick, onUnmounted, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useLoginUserStore } from '@/store/useLoginUserStore';
@@ -238,6 +238,20 @@ onUnmounted(() => {
         myChart = null;
     }
 });
+
+// 监听路由参数id的变化
+watch(() => route.params.id, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    // 销毁之前的图表实例
+    if (myChart) {
+      myChart.dispose();
+      myChart = null;
+    }
+    // 重新获取图表详情
+    fetchChartDetail();
+  }
+});
+
 </script>
 
 <style scoped>

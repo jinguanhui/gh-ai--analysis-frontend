@@ -400,16 +400,15 @@ onActivated(() => {
     loadChartList();
     // 组件被激活时，重新添加窗口大小变化监听
     window.addEventListener('resize', handleResize);
-    const taskId = chartAnalysisStore.taskId;
-    const chartId = chartAnalysisStore.chartId;
-
+    
     // 重新初始化所有图表
     chartList.value.forEach(chart => {
         initChart(chart.id);
+        const taskId = chartAnalysisStore.chartIdToTaskIdMap.get(chart.id);
 
         // 为非成功和非失败状态的图表重新建立SSE连接
-        if (chart.status !== 'succeed' && chart.status !== 'failed' && chart.taskId) {
-            establishSSEConnection(chartId, taskId);
+        if (chart.status !== 'succeed' && chart.status !== 'failed' && taskId) {
+            establishSSEConnection(chart.id, taskId);
         }
     });
 });
