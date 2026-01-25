@@ -3,9 +3,15 @@
         <h1 class="page-title">图表详情</h1>
 
         <!-- 面包屑导航 -->
-        <a-breadcrumb class="breadcrumb-nav">
-            <a-breadcrumb-item><a href="/chart/chartManage">图表管理</a></a-breadcrumb-item>
-            <a-breadcrumb-item>{{ chartDetail?.name || '图表详情' }}</a-breadcrumb-item>
+        <a-breadcrumb :routes="routes" class="breadcrumb-nav">
+            <template #itemRender="{ route, paths }">
+                <span v-if="routes.indexOf(route) === routes.length - 1">
+                    {{ route.breadcrumbName }}
+                </span>
+                <router-link v-else :to="`${basePath}/${paths.join('/')}`">
+                    {{ route.breadcrumbName }}
+                </router-link>
+            </template>
         </a-breadcrumb>
 
         <!-- 加载中状态 -->
@@ -48,7 +54,8 @@
                     <h3 class="section-title">图表展示</h3>
                     <div ref="chartRef" v-show="chartDetail.genChart !== null" class="chart-container"></div>
                     <a-result v-if="chartDetail.status === 'failed'" status="error" :title="chartDetail.execMessage" />
-                    <a-result v-if="chartDetail.status === 'wait' || chartDetail.status === 'running'" status="info" :title="chartDetail.execMessage" />
+                    <a-result v-if="chartDetail.status === 'wait' || chartDetail.status === 'running'" status="info"
+                        :title="chartDetail.execMessage" />
                 </div>
 
                 <!-- 分析结果 -->
@@ -89,6 +96,27 @@ const loading = ref(true);
 const chartDetail = ref<any>({});
 const chartRef = ref<HTMLElement | null>(null);
 let myChart: echarts.ECharts | null = null;
+
+interface Route {
+  path: string;
+  breadcrumbName: string;
+  children?: Array<{
+    path: string;
+    breadcrumbName: string;
+  }>;
+}
+const basePath = '/chart';
+const routes = ref<Route[]>([
+  {
+    path: 'chartManage',
+    breadcrumbName: '图表管理',
+  },
+  {
+    path: '',
+    breadcrumbName: chartDetail?.value?.name || '图表详情',
+    
+  }
+]);
 
 // 格式化日期
 const formatDate = (date: string) => {

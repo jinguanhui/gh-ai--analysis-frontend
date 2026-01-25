@@ -13,6 +13,9 @@ export const useChartAnalysisStore = defineStore("chartAnalysis", () => {
   const chartOption = ref<any>(null); // 存储图表配置，用于页面切换后重新渲染
   const taskId = ref(''); // 添加taskId存储
   const chartId = ref<number>(0); // 添加chartId存储
+  
+  // 添加chartId和taskId的映射关系，chartId为键
+  const chartIdToTaskIdMap = ref<Map<number, string>>(new Map());
 
   // 设置分析参数
   function setAnalysisParams(params: {
@@ -47,6 +50,10 @@ export const useChartAnalysisStore = defineStore("chartAnalysis", () => {
   function setTaskAndChartId(taskIdVal: string, chartIdVal: number) {
     taskId.value = taskIdVal;
     chartId.value = chartIdVal;
+
+    
+    // 将taskId和chartId存入map，chartId为键
+    chartIdToTaskIdMap.value.set(chartIdVal, taskIdVal);
   }
 
   // 重置所有状态
@@ -61,6 +68,9 @@ export const useChartAnalysisStore = defineStore("chartAnalysis", () => {
     chartOption.value = null;
     taskId.value = ''; // 重置taskId
     chartId.value = 0; // 重置chartId
+    
+    // 清空map
+    chartIdToTaskIdMap.value.clear();
   }
 
   return {
@@ -74,6 +84,7 @@ export const useChartAnalysisStore = defineStore("chartAnalysis", () => {
     chartOption,
     taskId,
     chartId,
+    chartIdToTaskIdMap, // 将map导出
     setAnalysisParams,
     setAnalysisResult,
     setChartOption,

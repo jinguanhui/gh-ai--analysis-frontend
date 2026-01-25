@@ -114,14 +114,14 @@
 </template>
 
 <script setup lang="ts" name="chartManage">
-import { ref, onMounted, nextTick, onUnmounted, onActivated, onDeactivated } from 'vue';
-import { useRouter } from 'vue-router';
-import { useLoginUserStore } from '@/store/useLoginUserStore';
-import * as echarts from 'echarts';
-import { getChartList, getChartById } from '@/api/mychart';
+import { getChartList } from '@/api/mychart';
 import myAxios from '@/request';
-import { message } from 'ant-design-vue';
 import { useChartAnalysisStore } from '@/store/useChartAnalysisStore';
+import { useLoginUserStore } from '@/store/useLoginUserStore';
+import { message } from 'ant-design-vue';
+import * as echarts from 'echarts';
+import { nextTick, onActivated, onDeactivated, onUnmounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import ProgressBar from '@/components/ProgressBar.vue';
 
 // 获取路由和用户状态
@@ -270,6 +270,9 @@ const establishSSEConnection = (chartId: number, taskId: string) => {
                         // 重新加载图表列表
                         loadChartList();
                     }
+                }else {
+                    message.error(`图表${chartList.value[chartId].name}生成失败`);
+                    closeSSEConnection(chartId);
                 }
             } catch (e) {
                 console.error(`解析图表${chartId}的SSE消息失败:`, e);
@@ -307,8 +310,7 @@ const loadChartList = async () => {
         const createTimeRange = searchForm.value.createTimeRange;
         const startTime = createTimeRange[0] ? createTimeRange[0].toISOString() : '';
         const endTime = createTimeRange[1] ? createTimeRange[1].toISOString() : '';
-        const taskId = chartAnalysisStore.taskId;
-        const chartId = chartAnalysisStore.chartId;
+
 
         const response = await getChartList({
             current: currentPage.value,
@@ -335,10 +337,13 @@ const loadChartList = async () => {
                 // 初始化所有图表
                 chartList.value.forEach(chart => {
                     initChart(chart.id);
+                    const taskId = chartAnalysisStore.chartIdToTaskIdMap.get(chart.id);
+                    console.log(`建立图表${chart.chartId}的SSE连接，taskId: ${taskId}`);
+
 
                     // 为非成功和非失败状态的图表建立SSE连接
-                    if (chart.status !== 'succeed' && chart.status !== 'failed') {
-                        establishSSEConnection(chartId, taskId);
+                    if (chart.status !== 'succeed' && chart.status !== 'failed' && taskId) {
+                        establishSSEConnection(chart.id, taskId);
                     }
                 });
             });
@@ -384,6 +389,15 @@ const handleResize = () => {
 
 // 组件被激活时的操作（KeepAlive相关）
 onActivated(() => {
+    // 检查用户是否登录
+    if (loginUserStore.loginUser.username === "未登录") {
+        message.error('请先登录');
+        router.push('/user/login');
+        return;
+    }
+
+    // 加载图表列表
+    loadChartList();
     // 组件被激活时，重新添加窗口大小变化监听
     window.addEventListener('resize', handleResize);
     const taskId = chartAnalysisStore.taskId;
@@ -413,36 +427,22 @@ onDeactivated(() => {
 });
 
 
-// 组件挂载时的操作
-onMounted(() => {
-    // 检查用户是否登录
-    if (loginUserStore.loginUser.username === "未登录") {
-        message.error('请先登录');
-        router.push('/user/login');
-        return;
-    }
+// // 组件挂载时的操作
+// onMounted(() => {
 
-    // 加载图表列表
-    loadChartList();
 
-    // 添加窗口大小变化监听
-    window.addEventListener('resize', handleResize);
-});
+//     // 添加窗口大小变化监听
+//     window.addEventListener('resize', handleResize);
+// });
 
 // 组件卸载时的清理工作
 onUnmounted(() => {
-    // 移除窗口大小变化监听
-    window.removeEventListener('resize', handleResize);
-
-    // 销毁所有图表实例
-    Object.values(myCharts.value).forEach(chart => {
-        chart?.dispose();
-    });
 
     // 关闭所有SSE连接
     Object.keys(eventSources.value).forEach(chartId => {
         closeSSEConnection(Number(chartId));
     });
+
 });
 </script>
 

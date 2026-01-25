@@ -274,6 +274,7 @@ const handleAnalysis = async () => {
     
     const { taskId, chartId } = data;
     
+    console.log(`！！！！！！！！！！！！taskId: ${taskId}, chartId: ${chartId}`);
     // 保存taskId和chartId到store
     chartAnalysisStore.setTaskAndChartId(taskId, chartId);
     
