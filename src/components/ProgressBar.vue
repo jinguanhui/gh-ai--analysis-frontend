@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" class="progress-container">
+  <div class="progress-container">
     <a-progress 
       :stroke-color="{
         from: '#108ee9',
@@ -17,7 +17,6 @@ import { Progress } from 'ant-design-vue';
 
 // 定义组件属性
 interface Props {
-  visible: boolean;
   percent: number;
   info: string;
   tipPrefix?: string;

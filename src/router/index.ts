@@ -8,6 +8,8 @@ import AccessKeyPage from "@/pages/user/AccessKeyPage.vue";
 import MyChart from "@/pages/chart/MyChart.vue";
 import UserSelfCenter from "@/pages/user/UserSelfCenter.vue";
 import ChartDetail from "@/pages/chart/ChartDetail.vue";
+import AIAnalysisAsync from "@/pages/chart/AIAnalysisAsync.vue";
+import { KeepAlive } from "vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -22,9 +24,18 @@ const routes: Array<RouteRecordRaw> = [
     
   },
   {
+    path: "/chart/analysis/async",
+    name: "aiAnalysisAsync",
+    component: AIAnalysisAsync,
+    
+  },
+  {
     path: "/chart/chartManage",
     name: "chartManage",
     component: MyChart,
+    meta: {
+      KeepAlive: true
+    }
   },
   {
     path: "/chart/detail/:id",

@@ -5,7 +5,9 @@
         <keep-alive><GlobalHeader /></keep-alive>
       </a-layout-header>
       <a-layout-content class="content">
-        <router-view />
+        <keep-alive include="chartManage">
+          <router-view />
+        </keep-alive>
       </a-layout-content>
       <a-layout-footer class="footer">
         <a href="https://github.com/jinguanhui/gh-ai--analysis-frontend" target="_blank">

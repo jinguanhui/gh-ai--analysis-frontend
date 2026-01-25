@@ -11,6 +11,8 @@ export const useChartAnalysisStore = defineStore("chartAnalysis", () => {
   const percentProcess = ref(0);
   const info = ref('');
   const chartOption = ref<any>(null); // 存储图表配置，用于页面切换后重新渲染
+  const taskId = ref(''); // 添加taskId存储
+  const chartId = ref<number>(0); // 添加chartId存储
 
   // 设置分析参数
   function setAnalysisParams(params: {
@@ -41,6 +43,12 @@ export const useChartAnalysisStore = defineStore("chartAnalysis", () => {
     info.value = infoText;
   }
 
+  // 设置任务ID和图表ID
+  function setTaskAndChartId(taskIdVal: string, chartIdVal: number) {
+    taskId.value = taskIdVal;
+    chartId.value = chartIdVal;
+  }
+
   // 重置所有状态
   function resetAll() {
     chartName.value = '';
@@ -51,6 +59,8 @@ export const useChartAnalysisStore = defineStore("chartAnalysis", () => {
     percentProcess.value = 0;
     info.value = '';
     chartOption.value = null;
+    taskId.value = ''; // 重置taskId
+    chartId.value = 0; // 重置chartId
   }
 
   return {
@@ -62,10 +72,13 @@ export const useChartAnalysisStore = defineStore("chartAnalysis", () => {
     percentProcess,
     info,
     chartOption,
+    taskId,
+    chartId,
     setAnalysisParams,
     setAnalysisResult,
     setChartOption,
     setProgressInfo,
+    setTaskAndChartId,
     resetAll
   };
 });

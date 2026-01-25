@@ -133,6 +133,12 @@ const items = computed<MenuProps["items"]>(() => {
       title: "AI分析",
     },
     {
+      key: "/chart/analysis/async",
+      icon: () => h(BarChartOutlined),
+      label: "异步分析",
+      title: "异步分析",
+    },
+    {
       key: "/chart/chartManage",
       icon: () => h(PieChartOutlined),
       label: "图表管理",

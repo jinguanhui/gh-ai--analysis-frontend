@@ -46,7 +46,9 @@
                 <!-- 图表展示 -->
                 <div class="chart-section">
                     <h3 class="section-title">图表展示</h3>
-                    <div ref="chartRef" class="chart-container"></div>
+                    <div ref="chartRef" v-show="chartDetail.genChart !== null" class="chart-container"></div>
+                    <a-result v-if="chartDetail.status === 'failed'" status="error" :title="chartDetail.execMessage" />
+                    <a-result v-if="chartDetail.status === 'wait' || chartDetail.status === 'running'" status="info" :title="chartDetail.execMessage" />
                 </div>
 
                 <!-- 分析结果 -->
