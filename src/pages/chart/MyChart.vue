@@ -302,6 +302,9 @@ const closeSSEConnection = (chartId: number) => {
         delete chartProgress.value[chartId];
         console.log(`图表${chartId}的SSE连接已关闭`);
     }
+
+    // 删除图表ID和任务ID的映射关系
+    chartAnalysisStore.chartIdToTaskIdMap.delete(chartId);
 };
 
 // 加载图表列表
@@ -438,6 +441,7 @@ onDeactivated(() => {
 
 // 组件卸载时的清理工作
 onUnmounted(() => {
+    chartAnalysisStore.chartIdToTaskIdMap.clear();
 
     // 关闭所有SSE连接
     Object.keys(eventSources.value).forEach(chartId => {
