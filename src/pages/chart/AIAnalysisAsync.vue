@@ -191,6 +191,7 @@ onUnmounted(() => {
 const handleReset = () => {
   chartAnalysisStore.resetAll(); // 使用store的重置方法
   if (myChart) myChart.setOption({}, true); // 清空图表
+  isLoading.value = false;
   message.success('已重置所有参数');
 };
 

@@ -347,6 +347,7 @@ const loadChartList = async () => {
                     }
                 });
             });
+            message.success('图表列表已更新');
         } else {
             message.error(response.data.message || '获取图表列表失败');
         }
