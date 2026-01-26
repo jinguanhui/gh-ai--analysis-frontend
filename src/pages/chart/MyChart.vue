@@ -268,6 +268,7 @@ const establishSSEConnection = (chartId: number, taskId: string) => {
                     if (newProgress >= 100) {
                         closeSSEConnection(chartId);
                         // 重新加载图表列表
+                        // initChart(event.data.chartId)
                         loadChartList();
                     }
                 }else {

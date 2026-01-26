@@ -279,7 +279,7 @@ const handleAnalysis = async () => {
     formData.append('encryptedData', encryptedData);
 
     // 2. 提交任务
-    const initResponse = await myAxios.post('/chart/gen', formData, {
+    const initResponse = await myAxios.post('/chart/gen/sync', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 30000
     });
