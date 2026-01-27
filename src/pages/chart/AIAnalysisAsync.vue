@@ -262,7 +262,7 @@ const handleAnalysis = async () => {
     // 2. 提交任务
     const initResponse = await myAxios.post('/chart/gen', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 30000
+      timeout: 300000
     });
 
     const { code, data, message: resMsg } = initResponse.data;

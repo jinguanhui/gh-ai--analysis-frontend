@@ -93,9 +93,6 @@
                     <div v-else>
                         <!-- 显示进度条 -->
                         <div class="progress-container">
-                            <!-- <a-progress :percent="chartProgress[chart.id]?.progress || 0" status="active" />
-                            <div class="progress-text">{{ chartProgress[chart.id]?.taskInfo || chart.execMessage ||
-                                '正在处理中...' }}</div> -->
                             <ProgressBar :percent="chartProgress[chart.id]?.progress || 0"
                                 :info="chartProgress[chart.id]?.taskInfo || chart.execMessage || '正在处理中...'" />
                         </div>
@@ -114,7 +111,7 @@
 </template>
 
 <script setup lang="ts" name="chartManage">
-import { getChartList } from '@/api/mychart';
+import { getChartById, getChartList } from '@/api/mychart';
 import myAxios from '@/request';
 import { useChartAnalysisStore } from '@/store/useChartAnalysisStore';
 import { useLoginUserStore } from '@/store/useLoginUserStore';
@@ -129,7 +126,6 @@ const router = useRouter();
 const loginUserStore = useLoginUserStore();
 
 const chartAnalysisStore = useChartAnalysisStore(); // 使用新的store
-
 
 // 定义响应式数据
 const chartList = ref<any[]>([]);
@@ -267,12 +263,11 @@ const establishSSEConnection = (chartId: number, taskId: string) => {
                     // 任务完成：关闭SSE
                     if (newProgress >= 100) {
                         closeSSEConnection(chartId);
-                        // 重新加载图表列表
-                        // initChart(event.data.chartId)
-                        loadChartList();
+                        // 更新单个图表信息
+                        updateChartProgress(chartId);
                     }
-                }else {
-                    message.error(`图表${chartList.value[chartId].name}生成失败`);
+                } else {
+                    message.error(`图表${chartList.value.find(c => c.id === chartId)?.name || '未知'}生成失败`);
                     closeSSEConnection(chartId);
                 }
             } catch (e) {
@@ -285,8 +280,15 @@ const establishSSEConnection = (chartId: number, taskId: string) => {
         eventSource.onerror = (error) => {
             console.error(`图表${chartId}的SSE连接错误:`, error);
             closeSSEConnection(chartId);
-            loadChartList();
+            // 出错时也尝试更新图表信息
+            updateChartProgress(chartId);
         };
+
+        //  添加关闭事件监听器
+        eventSource.addEventListener('close', () => {
+            console.log(`图表${chartId}的SSE连接已关闭`);
+            updateChartProgress(chartId);
+        });
 
     } catch (error: any) {
         console.error(`图表${chartId}建立SSE连接失败:`, error);
@@ -307,6 +309,37 @@ const closeSSEConnection = (chartId: number) => {
     chartAnalysisStore.chartIdToTaskIdMap.delete(chartId);
 };
 
+// 更新单个图表的进度和状态
+const updateChartProgress = async (chartId: number) => {
+    try {
+        const response = await getChartById(chartId);
+        if (response.data.code === 200) {
+            const updatedChart = response.data.data;
+            
+            // 更新图表列表中的对应图表信息
+            const chartIndex = chartList.value.findIndex(chart => chart.id === chartId);
+            if (chartIndex !== -1) {
+                chartList.value[chartIndex] = updatedChart;
+            }
+
+            // 如果图表已成功生成，初始化图表
+            if (updatedChart.status === 'succeed') {
+                // 延迟一下，确保DOM已更新
+                nextTick(() => {
+                    initChart(chartId);
+                });
+            }
+
+            message.success('图表状态已更新');
+        } else {
+            message.error(response.data.message || '更新图表进度失败');
+        }
+    } catch (error: any) {
+        console.error('更新图表进度异常:', error);
+        message.error(error.response?.data?.message || '更新图表进度异常');
+    }
+};
+
 // 加载图表列表
 const loadChartList = async () => {
     try {
@@ -314,7 +347,6 @@ const loadChartList = async () => {
         const createTimeRange = searchForm.value.createTimeRange;
         const startTime = createTimeRange[0] ? createTimeRange[0].toISOString() : '';
         const endTime = createTimeRange[1] ? createTimeRange[1].toISOString() : '';
-
 
         const response = await getChartList({
             current: currentPage.value,
@@ -342,8 +374,6 @@ const loadChartList = async () => {
                 chartList.value.forEach(chart => {
                     initChart(chart.id);
                     const taskId = chartAnalysisStore.chartIdToTaskIdMap.get(chart.id);
-                    console.log(`建立图表${chart.chartId}的SSE连接，taskId: ${taskId}`);
-
 
                     // 为非成功和非失败状态的图表建立SSE连接
                     if (chart.status !== 'succeed' && chart.status !== 'failed' && taskId) {
@@ -405,7 +435,7 @@ onActivated(() => {
     loadChartList();
     // 组件被激活时，重新添加窗口大小变化监听
     window.addEventListener('resize', handleResize);
-    
+
     // 重新初始化所有图表
     chartList.value.forEach(chart => {
         initChart(chart.id);
@@ -430,15 +460,6 @@ onDeactivated(() => {
     myCharts.value = {};
 });
 
-
-// // 组件挂载时的操作
-// onMounted(() => {
-
-
-//     // 添加窗口大小变化监听
-//     window.addEventListener('resize', handleResize);
-// });
-
 // 组件卸载时的清理工作
 onUnmounted(() => {
     chartAnalysisStore.chartIdToTaskIdMap.clear();
@@ -447,7 +468,6 @@ onUnmounted(() => {
     Object.keys(eventSources.value).forEach(chartId => {
         closeSSEConnection(Number(chartId));
     });
-
 });
 </script>
 
