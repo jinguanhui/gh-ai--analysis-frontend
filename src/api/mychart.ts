@@ -23,3 +23,19 @@ export const getChartById = async (id: number) => {
     params: { id },
   });
 };
+
+/**
+ * 删除用户
+ * @param id
+ */
+export const reAnalysis = async (id: number) => {
+  return myAxios.request({
+    url: "/chart/re_gen",
+    method: "POST",
+    data: id ,
+    // 关键点：要传递 JSON 格式的值
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+};

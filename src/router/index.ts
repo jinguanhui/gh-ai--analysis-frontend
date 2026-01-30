@@ -10,6 +10,7 @@ import UserSelfCenter from "@/pages/user/UserSelfCenter.vue";
 import ChartDetail from "@/pages/chart/ChartDetail.vue";
 import AIAnalysisAsync from "@/pages/chart/AIAnalysisAsync.vue";
 import { KeepAlive } from "vue";
+import AIAnalysisByMq from "@/pages/chart/AIAnalysisByMq.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -21,6 +22,12 @@ const routes: Array<RouteRecordRaw> = [
     path: "/chart/analysis",
     name: "aiAnalysis",
     component: AIAnalysis,
+    
+  },
+  {
+    path: "/chart/analysis/mq",
+    name: "aIAnalysisByMq",
+    component: AIAnalysisByMq,
     
   },
   {

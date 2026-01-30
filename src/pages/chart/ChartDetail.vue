@@ -52,14 +52,14 @@
                 <!-- 图表展示 -->
                 <div class="chart-section">
                     <h3 class="section-title">图表展示</h3>
-                    <div ref="chartRef" v-show="chartDetail.genChart !== null" class="chart-container"></div>
+                    <div ref="chartRef" v-show="chartDetail.genChart !== null && chartDetail.status === 'succeed'" class="chart-container"></div>
                     <a-result v-if="chartDetail.status === 'failed'" status="error" :title="chartDetail.execMessage" />
                     <a-result v-if="chartDetail.status === 'wait' || chartDetail.status === 'running'" status="info"
                         :title="chartDetail.execMessage" />
                 </div>
 
                 <!-- 分析结果 -->
-                <div v-if="chartDetail.genResult" class="result-section">
+                <div v-if="chartDetail.genResult && chartDetail.status === 'succeed'" class="result-section">
                     <h3 class="section-title">分析结果</h3>
                     <div class="result-content">
                         <p>{{ chartDetail.genResult }}</p>
@@ -84,7 +84,7 @@ import { message } from 'ant-design-vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useLoginUserStore } from '@/store/useLoginUserStore';
 import * as echarts from 'echarts';
-import { getChartById } from '@/api/mychart';
+import { getChartById, reAnalysis } from '@/api/mychart';
 
 // 获取路由和用户状态
 const router = useRouter();

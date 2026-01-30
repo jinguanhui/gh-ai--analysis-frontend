@@ -52,10 +52,10 @@
         <!-- 使用栅格系统布局 -->
         <a-row :gutter="[16, 24]">
             <a-col :span="12" v-for="chart in chartList" :key="chart.id">
-                <a-card :title="chart.name" :bordered="false" class="chart-card" @click="goToChartDetail(chart.id)"
+                <a-card :title="chart.name" :bordered="false" class="chart-card" 
                     style="cursor: pointer;">
                     <!-- 图表信息 -->
-                    <div class="chart-info">
+                    <div class="chart-info" @click="goToChartDetail(chart.id)">
                         <div class="info-item">
                             <span class="info-label">分析目标：</span>
                             <span class="info-value">{{ chart.goal }}</span>
@@ -80,6 +80,11 @@
                             <span class="info-label">执行信息：</span>
                             <span class="info-value">{{ chart.execMessage }}</span>
                         </div>
+                    </div>
+                    <!-- 为失败状态的图表添加点击重试的按钮 -->
+                    <div v-if="chart.status === 'failed'" class="info-item"  @click.stop>
+                        <span class="info-label">重试分析</span>
+                        <a-button type="primary" @click.stop="retryAnalysis(chart.id)">点击重试</a-button>
                     </div>
 
                     <!-- 图表渲染区域 -->
@@ -111,7 +116,7 @@
 </template>
 
 <script setup lang="ts" name="chartManage">
-import { getChartById, getChartList } from '@/api/mychart';
+import { getChartById, getChartList, reAnalysis } from '@/api/mychart';
 import myAxios from '@/request';
 import { useChartAnalysisStore } from '@/store/useChartAnalysisStore';
 import { useLoginUserStore } from '@/store/useLoginUserStore';
@@ -177,6 +182,38 @@ const getStatusText = (status: string) => {
         'wait': '任务等待执行'
     };
     return statusMap[status] || status;
+};
+
+const retryAnalysis = async (id: number,event?: Event) => {
+    try {
+        const response = await reAnalysis(id);
+        if (response.data.code === 200) {
+            message.success('分析任务已重新提交');
+
+            const { taskId, chartId } = response.data.data;
+            // 保存taskId和chartId到store
+            chartAnalysisStore.setTaskAndChartId(taskId, chartId);
+             // 立即更新图表状态为running，清空相关数据以便显示进度条
+            const chartIndex = chartList.value.findIndex(chart => chart.id === chartId);
+            if (chartIndex !== -1) {
+                // 更新图表状态为running
+                chartList.value[chartIndex].status = 'running';
+                // 清空图表数据
+                chartList.value[chartIndex].genChart = null;
+                chartList.value[chartIndex].genResult = null;
+                chartList.value[chartIndex].execMessage = '正在重新分析...';
+            }
+            
+            // 建立SSE连接
+            establishSSEConnection(chartId, taskId);
+
+        } else {
+            message.error(response.data.message || '重试分析失败');
+        }
+    } catch (error) {
+        console.error('重试分析失败:', error);
+        message.error('重试分析失败');
+    }
 };
 
 // 初始化单个图表
@@ -315,7 +352,7 @@ const updateChartProgress = async (chartId: number) => {
         const response = await getChartById(chartId);
         if (response.data.code === 200) {
             const updatedChart = response.data.data;
-            
+
             // 更新图表列表中的对应图表信息
             const chartIndex = chartList.value.findIndex(chart => chart.id === chartId);
             if (chartIndex !== -1) {

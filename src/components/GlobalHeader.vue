@@ -139,6 +139,12 @@ const items = computed<MenuProps["items"]>(() => {
       title: "异步分析",
     },
     {
+      key: "/chart/analysis/mq",
+      icon: () => h(BarChartOutlined),
+      label: "MQ分析",
+      title: "MQ分析",
+    },
+    {
       key: "/chart/chartManage",
       icon: () => h(PieChartOutlined),
       label: "图表管理",
