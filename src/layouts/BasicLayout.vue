@@ -17,11 +17,14 @@
         </a>
       </a-layout-footer>
     </a-layout>
+    <!-- AI对话组件 -->
+    <AIChat />
   </div>
 </template>
 
 <script setup lang="ts">
 import GlobalHeader from "@/components/GlobalHeader.vue";
+import AIChat from "@/pages/user/AiChart.vue";
 </script>
 
 <style scoped>

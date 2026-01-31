@@ -4,7 +4,7 @@
       <a-col flex="200px">
         <div class="title-bar" @click="goToHome">
           <img class="logo" src="../assets/logo.jpg" alt="logo" />
-          <div class="title">GH智能分析</div>
+          <div class="title">光吾智能分析</div>
         </div>
       </a-col>
       <a-col flex="auto">
@@ -33,7 +33,7 @@
                     <a>个人中心</a>
                   </a-menu-item>
                   <a-menu-item v-if="loginUserStore.loginUser.id" @click="doMenuClick({ key: '/user/accesskey' })">
-                    <a>AccessKey密钥</a>
+                    <a>PublicKey管理</a>
                   </a-menu-item>
                   <a-menu-item v-if="loginUserStore.loginUser.id" @click="doLogout">
                     <a>退出</a>
