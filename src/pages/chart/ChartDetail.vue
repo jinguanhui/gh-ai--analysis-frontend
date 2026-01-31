@@ -70,7 +70,15 @@
                 <div v-if="chartDetail.chartData" class="data-section">
                     <h3 class="section-title">原始数据</h3>
                     <div class="data-content">
-                        <a-textarea :value="chartDetail.chartData" :rows="10" readonly />
+                        <!-- <a-textarea :value="chartDetail.chartData" :rows="10" readonly /> -->
+                        <a-table 
+                            :columns="tableColumns" 
+                            :data-source="tableData" 
+                            bordered 
+                            size="middle"
+                            :pagination="false"
+                            class="csv-table"
+                        />
                     </div>
                 </div>
             </a-card>
@@ -79,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, onUnmounted, watch } from 'vue';
+import { ref, onMounted, nextTick, onUnmounted, watch, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useLoginUserStore } from '@/store/useLoginUserStore';
@@ -96,6 +104,52 @@ const loading = ref(true);
 const chartDetail = ref<any>({});
 const chartRef = ref<HTMLElement | null>(null);
 let myChart: echarts.ECharts | null = null;
+
+// 解析CSV数据
+const parseCSV = (csvString: string) => {
+    if (!csvString) return { columns: [], data: [] };
+    
+    const lines = csvString.split('\n').filter(line => line.trim());
+    if (lines.length === 0) return { columns: [], data: [] };
+    
+    // 获取列名
+    const headers = lines[0].split(',').map(header => header.trim());
+    
+    // 获取数据行
+    const data = lines.slice(1).map(line => {
+        const values = line.split(',').map(value => value.trim());
+        const row: any = {};
+        headers.forEach((header, index) => {
+            row[header] = values[index] || '';
+        });
+        return row;
+    });
+    
+    return { columns: headers, data };
+};
+// 计算表格列
+const tableColumns = computed(() => {
+    if (!chartDetail.value?.chartData) return [];
+    
+    const { columns } = parseCSV(chartDetail.value.chartData);
+    return columns.map(col => ({
+        title: col,
+        dataIndex: col,
+        key: col,
+        ellipsis: true,
+        align: 'center'
+    }));
+});
+// 计算表格数据
+const tableData = computed(() => {
+    if (!chartDetail.value?.chartData) return [];
+    
+    const { data } = parseCSV(chartDetail.value.chartData);
+    return data.map((item, index) => ({
+        ...item,
+        key: index
+    }));
+});
 
 interface Route {
   path: string;
@@ -255,6 +309,26 @@ watch(() => route.params.id, (newId, oldId) => {
 </script>
 
 <style scoped>
+/* CSV表格样式 */
+.csv-table {
+    background-color: #fff;
+    border-radius: 8px;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+.csv-table :deep(.ant-table-thead > tr > th) {
+    background-color: #fafafa;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #f0f0f0;
+}
+.csv-table :deep(.ant-table-tbody > tr > td) {
+    border-bottom: 1px solid #f0f0f0;
+    color: #555;
+}
+.csv-table :deep(.ant-table-tbody > tr:hover > td) {
+    background-color: #f5f7fa;
+}
 /* 状态样式 */
 .status-badge {
     padding: 4px 12px;
