@@ -1,649 +1,438 @@
+d:/code/gh-ai-analysis/gh-ai-analysis-frontend-vue/src/pages/user/AiChart.vue
 <template>
-    <div class="my-chart-container">
-        <h1>图表管理</h1>
-
-        <!-- 高级搜索表单 -->
-        <a-card :bordered="false" class="search-card">
-            <a-row :gutter="16">
-                <a-col :span="8">
-                    <div class="search-item">
-                        <span class="search-label">图表名称：</span>
-                        <a-input v-model:value="searchForm.name" placeholder="请输入图表名称" allowClear />
-                    </div>
-                </a-col>
-                <a-col :span="8">
-                    <div class="search-item">
-                        <span class="search-label">分析目标：</span>
-                        <a-input v-model:value="searchForm.goal" placeholder="请输入分析目标" allowClear />
-                    </div>
-                </a-col>
-                <a-col :span="8">
-                    <div class="search-item">
-                        <span class="search-label">图表类型：</span>
-                        <a-select v-model:value="searchForm.chartType" placeholder="请选择图表类型" allowClear>
-                            <a-select-option value="折线图">折线图</a-select-option>
-                            <a-select-option value="柱状图">柱状图</a-select-option>
-                            <a-select-option value="饼图">饼图</a-select-option>
-                            <a-select-option value="面积图">面积图</a-select-option>
-                            <a-select-option value="雷达图">雷达图</a-select-option>
-                        </a-select>
-                    </div>
-                </a-col>
-            </a-row>
-            <a-row :gutter="16" style="margin-top: 16px;">
-                <a-col :span="12">
-                    <div class="search-item">
-                        <span class="search-label">创建时间：</span>
-                        <a-range-picker v-model:value="searchForm.createTimeRange" style="width: 65%;"
-                            :placeholder="['开始日期', '结束日期']" />
-                    </div>
-                </a-col>
-                <a-col :span="12" style="display: flex; justify-content: flex-end; gap: 16px;">
-                    <a-button type="primary" @click="handleSearch" style="margin-right: 8px;">
-                        搜索
-                    </a-button>
-                    <a-button @click="handleResetSearch">
-                        刷新
-                    </a-button>
-                </a-col>
-            </a-row>
-        </a-card>
-
-        <!-- 使用栅格系统布局 -->
-        <a-row :gutter="[16, 24]">
-            <a-col :span="12" v-for="chart in chartList" :key="chart.id">
-                <a-card :title="chart.name" :bordered="false" class="chart-card" 
-                    style="cursor: pointer;">
-                    <!-- 图表信息 -->
-                    <div class="chart-info" @click="goToChartDetail(chart.id)">
-                        <div class="info-item">
-                            <span class="info-label">分析目标：</span>
-                            <span class="info-value">{{ chart.goal }}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">图表类型：</span>
-                            <span class="info-value">{{ chart.chartType }}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">创建时间：</span>
-                            <span class="info-value">{{ formatDate(chart.createTime) }}</span>
-                        </div>
-                        <!-- 添加图表状态 -->
-                        <div class="info-item">
-                            <span class="info-label">图表状态：</span>
-                            <span class="info-value status-badge" :class="`status-${chart.status}`">
-                                {{ chart.execMessage || getStatusText(chart.status) }}
-                            </span>
-                        </div>
-                        <!-- 添加执行信息 -->
-                        <div v-if="chart.execMessage" class="info-item">
-                            <span class="info-label">执行信息：</span>
-                            <span class="info-value">{{ chart.execMessage }}</span>
-                        </div>
-                    </div>
-                    <!-- 为失败状态的图表添加点击重试的按钮 -->
-                    <div v-if="chart.status === 'failed'" class="info-item"  @click.stop>
-                        <span class="info-label">重试分析</span>
-                        <a-button type="primary" @click.stop="retryAnalysis(chart.id)">点击重试</a-button>
-                    </div>
-
-                    <!-- 图表渲染区域 -->
-                    <div v-if="chart.status === 'succeed'" class="chart-preview">
-                        <!-- 使用函数式ref来获取每个图表的DOM元素 -->
-                        <div :ref="el => setChartRef(chart.id, el)" class="chart-canvas"></div>
-                    </div>
-                    <div v-else-if="chart.status === 'failed'">
-                        <a-result status="error" :title="chart.execMessage" />
-                    </div>
-                    <div v-else>
-                        <!-- 显示进度条 -->
-                        <div class="progress-container">
-                            <ProgressBar :percent="chartProgress[chart.id]?.progress || 0"
-                                :info="chartProgress[chart.id]?.taskInfo || chart.execMessage || '正在处理中...'" />
-                        </div>
-                    </div>
-
-                </a-card>
-            </a-col>
-        </a-row>
-
-        <!-- 分页组件 -->
-        <div class="pagination-container">
-            <a-pagination :current="currentPage" :page-size="pageSize" :total="total" :show-size-changer="false"
-                @change="handlePageChange" />
-        </div>
+  <div class="ai-chat-container">
+    <!-- AI对话按钮 -->
+    <div class="ai-chat-button" @click="toggleChatWindow">
+      <a-icon type="robot" theme="twoTone" two-tone-color="#1890ff" />
     </div>
+
+    <!-- AI对话窗口 -->
+    <div class="ai-chat-window" v-if="isChatWindowOpen">
+      <div class="ai-chat-header">
+        <div class="header-content">
+          <a-icon type="robot" theme="twoTone" two-tone-color="#1890ff" />
+          <span>AI助手</span>
+        </div>
+        <a-icon type="close" @click="toggleChatWindow" />
+      </div>
+
+      <div class="ai-chat-messages">
+        <div class="message" v-for="(msg, index) in chatMessages" :key="index" :class="msg.type">
+          <div class="message-content">
+            {{ msg.content }}
+          </div>
+        </div>
+        <div class="loading" v-if="isLoading">
+          <a-icon type="loading" />
+        </div>
+      </div>
+
+      <div class="ai-chat-input">
+        <a-input
+          v-model:value="inputMessage"
+          placeholder="请输入您的问题..."
+          @keyup.enter="sendMessage"
+          :disabled="isLoading"
+        />
+        <a-button type="primary" @click="sendMessage" :disabled="isLoading || !inputMessage">
+          发送
+        </a-button>
+      </div>
+    </div>
+  </div>
 </template>
 
-<script setup lang="ts" name="chartManage">
-import { getChartById, getChartList, reAnalysis } from '@/api/mychart';
-import myAxios from '@/request';
-import { useChartAnalysisStore } from '@/store/useChartAnalysisStore';
-import { useLoginUserStore } from '@/store/useLoginUserStore';
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, onActivated, onDeactivated } from 'vue';
 import { message } from 'ant-design-vue';
-import * as echarts from 'echarts';
-import { nextTick, onActivated, onDeactivated, onUnmounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import ProgressBar from '@/components/ProgressBar.vue';
 
-// 获取路由和用户状态
-const router = useRouter();
-const loginUserStore = useLoginUserStore();
+// 聊天状态
+const isChatWindowOpen = ref(false);
+const chatMessages = ref<{ type: 'user' | 'ai'; content: string; isComplete?: boolean }[]>([]);
+const inputMessage = ref('');
+const isLoading = ref(false);
 
-const chartAnalysisStore = useChartAnalysisStore(); // 使用新的store
+// SSE连接实例
+let eventSource: EventSource | null = null;
+// 聊天ID，用于保持对话上下文
+let chatId: string = '';
 
-// 定义响应式数据
-const chartList = ref<any[]>([]);
-const chartRefs = ref<Record<number, HTMLElement | null>>({});
-const myCharts = ref<Record<number, echarts.ECharts | null>>({});
-const currentPage = ref(1);
-const pageSize = ref(10);
-const total = ref(0);
-const eventSources = ref<Record<number, EventSource | null>>({}); // 存储每个图表的SSE连接
-// 修改后
-const chartProgress = ref<Record<number, { progress: number; taskInfo: string }>>({}); // 存储每个图表的进度和进度信息
-// 搜索表单数据
-const searchForm = ref({
-    name: '',
-    goal: '',
-    chartType: '',
-    createTimeRange: [] as Date[]
-});
+// 当前正在输入的AI消息索引
+let currentAiMessageIndex: number | null = null;
+// 当前AI消息的完整内容
+let currentAiMessageContent: string = '';
+// 打字机计时器
+let typewriterTimer: number | null = null;
 
-// 设置图表ref
-const setChartRef = (chartId: number, el: HTMLElement | null) => {
-    chartRefs.value[chartId] = el;
+// 切换聊天窗口显示状态
+const toggleChatWindow = () => {
+  isChatWindowOpen.value = !isChatWindowOpen.value;
+  // 如果是第一次打开聊天窗口，初始化对话
+  if (isChatWindowOpen.value && chatMessages.value.length === 0) {
+    initChat();
+  }
 };
 
-// 跳转到图表详情页
-const goToChartDetail = (chartId: number) => {
-    router.push(`/chart/detail/${chartId}`);
-};
-
-// 格式化日期
-const formatDate = (date: string) => {
-    if (!date) return '';
-    const d = new Date(date);
-    return d.toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
+// 初始化对话
+const initChat = async () => {
+  // 显示加载状态
+  isLoading.value = true;
+  // 生成聊天ID
+  chatId = 'chat_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+  
+  try {
+    // 这里可以添加初始化数据请求逻辑（如果需要）
+    // 模拟加载延迟
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // 添加欢迎消息
+    chatMessages.value.push({
+      type: 'ai',
+      content: '您好！我是AI助手，有什么可以帮助您的吗？',
+      isComplete: true
     });
+  } finally {
+    isLoading.value = false;
+  }
 };
 
-// 获取状态文本
-const getStatusText = (status: string) => {
-    const statusMap: Record<string, string> = {
-        'succeed': '任务成功执行',
-        'failed': '任务执行失败',
-        'running': '任务正在执行',
-        'wait': '任务等待执行'
+// 发送消息
+const sendMessage = async () => {
+  if (!inputMessage.value || isLoading.value) return;
+
+  const msgContent = inputMessage.value;
+  // 添加用户消息到对话列表
+  chatMessages.value.push({
+    type: 'user',
+    content: msgContent
+  });
+  // 清空输入框
+  inputMessage.value = '';
+  // 显示加载状态
+  isLoading.value = true;
+
+  try {
+    // 关闭已有SSE连接
+    closeSSE();
+    
+    // 建立SSE连接
+    let sseUrl = `/ai/chat?message=${encodeURIComponent(msgContent)}&chatId=${chatId}`;
+    if (myAxios.defaults.baseURL && !myAxios.defaults.baseURL.includes(window.location.host)) {
+      sseUrl = `${myAxios.defaults.baseURL}${sseUrl}`;
+    }
+    // 添加token
+    const token = localStorage.getItem("token");
+    if (token) {
+      sseUrl += `&token=${token}`;
+    }
+
+    eventSource = new EventSource(sseUrl);
+    console.log('AI聊天SSE连接已建立：', sseUrl);
+
+    // 接收消息
+    eventSource.onmessage = (event) => {
+      try {
+        const data = event.data;
+        if (data) {
+          // 如果是新的AI消息开始，创建空消息并开始打字机效果
+          if (currentAiMessageIndex === null) {
+            currentAiMessageIndex = chatMessages.value.length;
+            chatMessages.value.push({
+              type: 'ai',
+              content: '',
+              isComplete: false
+            });
+          }
+          
+          // 累积完整消息内容
+          currentAiMessageContent += data;
+          
+          // 如果已经有打字机计时器在运行，清除它
+          if (typewriterTimer !== null) {
+            clearInterval(typewriterTimer);
+          }
+          
+          // 开始打字机效果
+          startTypewriterEffect();
+        }
+      } catch (e) {
+        console.error('解析AI消息失败:', e);
+        message.error('AI消息解析失败');
+      }
     };
-    return statusMap[status] || status;
-};
 
-const retryAnalysis = async (id: number,event?: Event) => {
-    try {
-        const response = await reAnalysis(id);
-        if (response.data.code === 200) {
-            message.success('分析任务已重新提交');
+    // 连接错误处理
+    eventSource.onerror = (error) => {
+      console.error('AI聊天SSE连接错误:', error);
+      message.error('AI聊天连接失败');
+      closeSSE();
+      isLoading.value = false;
+    };
 
-            const { taskId, chartId } = response.data.data;
-            // 保存taskId和chartId到store
-            chartAnalysisStore.setTaskAndChartId(taskId, chartId);
-             // 立即更新图表状态为running，清空相关数据以便显示进度条
-            const chartIndex = chartList.value.findIndex(chart => chart.id === chartId);
-            if (chartIndex !== -1) {
-                // 更新图表状态为running
-                chartList.value[chartIndex].status = 'running';
-                // 清空图表数据
-                chartList.value[chartIndex].genChart = null;
-                chartList.value[chartIndex].genResult = null;
-                chartList.value[chartIndex].execMessage = '正在重新分析...';
-            }
-            
-            // 建立SSE连接
-            establishSSEConnection(chartId, taskId);
-
-        } else {
-            message.error(response.data.message || '重试分析失败');
+    // 连接关闭处理
+    eventSource.addEventListener('close', () => {
+      console.log('AI聊天SSE连接已关闭');
+      
+      // 如果还有未完成的AI消息，立即显示完整内容
+      if (currentAiMessageIndex !== null) {
+        if (typewriterTimer !== null) {
+          clearInterval(typewriterTimer);
+          typewriterTimer = null;
         }
-    } catch (error) {
-        console.error('重试分析失败:', error);
-        message.error('重试分析失败');
-    }
-};
-
-// 初始化单个图表
-const initChart = (chartId: number) => {
-    // 确保DOM元素存在且图表实例未创建
-    if (!chartRefs.value[chartId] || myCharts.value[chartId]) return;
-
-    // 创建图表实例
-    myCharts.value[chartId] = echarts.init(chartRefs.value[chartId]);
-
-    // 查找对应的图表数据
-    const chart = chartList.value.find(item => item.id === chartId);
-    if (!chart) return;
-
-    // 确保genChart字段存在
-    if (!chart.genChart) {
-        console.error(`图表${chartId}缺少genChart数据`);
-        return;
-    }
-
-    try {
-        // 解析genChart字段为对象
-        let chartOption;
-        if (typeof chart.genChart === 'string') {
-            // 使用new Function安全地解析包含函数的配置字符串
-            const cleanedGenChart = chart.genChart.replace(/\n/g, '').replace(/\s+/g, ' ');
-            // 将JSON字符串转换为可执行的JavaScript代码
-            const parseFunc = new Function(`return ${cleanedGenChart}`);
-            chartOption = parseFunc();
-        } else {
-            chartOption = chart.genChart;
+        
+        // 显示完整内容
+        if (chatMessages.value[currentAiMessageIndex]) {
+          chatMessages.value[currentAiMessageIndex].content = currentAiMessageContent;
+          chatMessages.value[currentAiMessageIndex].isComplete = true;
         }
+        
+        // 重置状态
+        currentAiMessageContent = '';
+      }
+      
+      isLoading.value = false;
+    });
 
-        // 移除图表标题
-        if (chartOption && typeof chartOption === 'object' && 'title' in chartOption) {
-            delete chartOption.title;
-        }
-
-        myCharts.value[chartId]?.setOption(chartOption, true);
-
-        console.log(`图表${chartId}渲染成功`, chartOption);
-    } catch (error) {
-        console.error(`解析图表${chartId}的配置失败:`, error);
-        console.error(`原始genChart数据:`, chart.genChart);
-        message.error(`图表${chartId}渲染失败`);
-    }
-};
-
-// 建立SSE连接
-const establishSSEConnection = (chartId: number, taskId: string) => {
-    if (eventSources.value[chartId]) {
-        return; // 已经有连接了，不再建立新连接
-    }
-
-    try {
-        // 处理baseURL拼接，避免跨域或路径错误
-        let sseUrl = `/chart/progress/${taskId}`;
-        if (myAxios.defaults.baseURL && !myAxios.defaults.baseURL.includes(window.location.host)) {
-            sseUrl = `${myAxios.defaults.baseURL}${sseUrl}`;
-        }
-        // 解决SSE缓存问题：添加时间戳参数
-        const token = localStorage.getItem("token");
-        sseUrl = `${sseUrl}?token=${token}`;
-
-        const eventSource = new EventSource(sseUrl);
-        eventSources.value[chartId] = eventSource;
-        console.log(`图表${chartId}的SSE连接已建立：`, sseUrl);
-
-        // SSE消息处理
-        eventSource.onmessage = (event) => {
-            try {
-                const progressData = JSON.parse(event.data);
-                console.log(`接收图表${chartId}的进度消息:`, progressData);
-
-                // 进度更新：严格限制0-100范围
-                if (progressData.code === 200 && progressData.data?.taskProcess !== undefined) {
-                    const newProgress = Math.min(Math.max(progressData.data.taskProcess, 0), 100);
-                    // 存储进度和进度信息
-                    chartProgress.value[chartId] = {
-                        progress: newProgress,
-                        taskInfo: progressData.data.taskInfo || '正在处理中...'
-                    };
-
-                    // 任务完成：关闭SSE
-                    if (newProgress >= 100) {
-                        closeSSEConnection(chartId);
-                        // 更新单个图表信息
-                        updateChartProgress(chartId);
-                    }
-                } else {
-                    message.error(`图表${chartList.value.find(c => c.id === chartId)?.name || '未知'}生成失败`);
-                    closeSSEConnection(chartId);
-                }
-            } catch (e) {
-                console.error(`解析图表${chartId}的SSE消息失败:`, e);
-                closeSSEConnection(chartId);
-            }
-        };
-
-        // SSE连接错误处理
-        eventSource.onerror = (error) => {
-            console.error(`图表${chartId}的SSE连接错误:`, error);
-            closeSSEConnection(chartId);
-            // 出错时也尝试更新图表信息
-            updateChartProgress(chartId);
-        };
-
-        //  添加关闭事件监听器
-        eventSource.addEventListener('close', () => {
-            console.log(`图表${chartId}的SSE连接已关闭`);
-            updateChartProgress(chartId);
-        });
-
-    } catch (error: any) {
-        console.error(`图表${chartId}建立SSE连接失败:`, error);
-        closeSSEConnection(chartId);
-    }
+  } catch (error) {
+    console.error('发送消息失败:', error);
+    message.error('发送消息失败');
+    isLoading.value = false;
+  }
 };
 
 // 关闭SSE连接
-const closeSSEConnection = (chartId: number) => {
-    if (eventSources.value[chartId]) {
-        eventSources.value[chartId]?.close();
-        eventSources.value[chartId] = null;
-        delete chartProgress.value[chartId];
-        console.log(`图表${chartId}的SSE连接已关闭`);
+const closeSSE = () => {
+  if (eventSource) {
+    eventSource.close();
+    eventSource = null;
+    console.log('AI聊天SSE连接已主动关闭');
+  }
+};
+
+// 开始打字机效果
+const startTypewriterEffect = () => {
+  if (currentAiMessageIndex === null) return;
+  
+  let charIndex = 0;
+  
+  // 如果当前消息已经有部分内容，从已有内容之后继续
+  if (chatMessages.value[currentAiMessageIndex]) {
+    charIndex = chatMessages.value[currentAiMessageIndex].content.length;
+  }
+  
+  // 设置打字速度（ms/字符）
+  const typeSpeed = 30;
+  
+  // 清除之前的计时器
+  if (typewriterTimer !== null) {
+    clearInterval(typewriterTimer);
+  }
+  
+  // 开始打字机效果
+  typewriterTimer = window.setInterval(() => {
+    if (charIndex < currentAiMessageContent.length) {
+      // 更新当前显示的内容
+      if (chatMessages.value[currentAiMessageIndex]) {
+        chatMessages.value[currentAiMessageIndex].content = currentAiMessageContent.substring(0, charIndex + 1);
+      }
+      charIndex++;
+    } else {
+      // 打字完成
+      if (typewriterTimer !== null) {
+        clearInterval(typewriterTimer);
+      }
+      
+      // 标记消息为已完成
+      if (chatMessages.value[currentAiMessageIndex]) {
+        chatMessages.value[currentAiMessageIndex].isComplete = true;
+      }
+      
+      // 重置状态
+      currentAiMessageIndex = null;
+      currentAiMessageContent = '';
     }
-
-    // 删除图表ID和任务ID的映射关系
-    chartAnalysisStore.chartIdToTaskIdMap.delete(chartId);
+  }, typeSpeed);
 };
 
-// 更新单个图表的进度和状态
-const updateChartProgress = async (chartId: number) => {
-    try {
-        const response = await getChartById(chartId);
-        if (response.data.code === 200) {
-            const updatedChart = response.data.data;
-
-            // 更新图表列表中的对应图表信息
-            const chartIndex = chartList.value.findIndex(chart => chart.id === chartId);
-            if (chartIndex !== -1) {
-                chartList.value[chartIndex] = updatedChart;
-            }
-
-            // 如果图表已成功生成，初始化图表
-            if (updatedChart.status === 'succeed') {
-                // 延迟一下，确保DOM已更新
-                nextTick(() => {
-                    initChart(chartId);
-                });
-            }
-
-            message.success('图表状态已更新');
-        } else {
-            message.error(response.data.message || '更新图表进度失败');
-        }
-    } catch (error: any) {
-        console.error('更新图表进度异常:', error);
-        message.error(error.response?.data?.message || '更新图表进度异常');
-    }
-};
-
-// 加载图表列表
-const loadChartList = async () => {
-    try {
-        // 格式化日期范围
-        const createTimeRange = searchForm.value.createTimeRange;
-        const startTime = createTimeRange[0] ? createTimeRange[0].toISOString() : '';
-        const endTime = createTimeRange[1] ? createTimeRange[1].toISOString() : '';
-
-        const response = await getChartList({
-            current: currentPage.value,
-            pageSize: pageSize.value,
-            name: searchForm.value.name,
-            goal: searchForm.value.goal,
-            chartType: searchForm.value.chartType,
-            startTime,
-            endTime
-        });
-
-        if (response.data.code === 200) {
-            chartList.value = response.data.data.records || [];
-            total.value = response.data.data.total || 0;
-
-            // 清空现有图表实例
-            Object.values(myCharts.value).forEach(chart => {
-                chart?.dispose();
-            });
-            myCharts.value = {};
-
-            // 延迟一下，确保DOM已更新
-            nextTick(() => {
-                // 初始化所有图表
-                chartList.value.forEach(chart => {
-                    initChart(chart.id);
-                    const taskId = chartAnalysisStore.chartIdToTaskIdMap.get(chart.id);
-
-                    // 为非成功和非失败状态的图表建立SSE连接
-                    if (chart.status !== 'succeed' && chart.status !== 'failed' && taskId) {
-                        establishSSEConnection(chart.id, taskId);
-                    }
-                });
-            });
-            message.success('图表列表已更新');
-        } else {
-            message.error(response.data.message || '获取图表列表失败');
-        }
-    } catch (error: any) {
-        console.error('获取图表列表异常:', error);
-        message.error(error.response?.data?.message || '获取图表列表异常');
-    }
-};
-
-// 处理页码变化
-const handlePageChange = (page: number) => {
-    currentPage.value = page;
-    loadChartList();
-};
-
-// 处理搜索
-const handleSearch = () => {
-    currentPage.value = 1;
-    loadChartList();
-};
-
-// 处理重置搜索
-const handleResetSearch = () => {
-    searchForm.value = {
-        name: '',
-        goal: '',
-        chartType: '',
-        createTimeRange: [] as Date[]
-    };
-    currentPage.value = 1;
-    loadChartList();
-};
-
-// 处理窗口大小变化，重新调整所有图表大小
-const handleResize = () => {
-    Object.values(myCharts.value).forEach(chart => {
-        chart?.resize();
-    });
-};
-
-// 组件被激活时的操作（KeepAlive相关）
+// 组件激活时的处理（进入KeepAlive缓存）
 onActivated(() => {
-    // 检查用户是否登录
-    if (loginUserStore.loginUser.username === "未登录") {
-        message.error('请先登录');
-        router.push('/user/login');
-        return;
-    }
-
-    // 加载图表列表
-    loadChartList();
-    // 组件被激活时，重新添加窗口大小变化监听
-    window.addEventListener('resize', handleResize);
-
-    // 重新初始化所有图表
-    chartList.value.forEach(chart => {
-        initChart(chart.id);
-        const taskId = chartAnalysisStore.chartIdToTaskIdMap.get(chart.id);
-
-        // 为非成功和非失败状态的图表重新建立SSE连接
-        if (chart.status !== 'succeed' && chart.status !== 'failed' && taskId) {
-            establishSSEConnection(chart.id, taskId);
-        }
-    });
+  console.log('AI聊天组件已激活');
+  // 组件激活时不需要重新建立连接，保持现有的聊天上下文
 });
 
-// 组件被停用时的操作（KeepAlive相关）
+// 组件停用前的处理（离开KeepAlive缓存）
 onDeactivated(() => {
-    // 组件被停用时，移除窗口大小变化监听
-    window.removeEventListener('resize', handleResize);
-
-    // 销毁所有图表实例，但保留SSE连接
-    Object.values(myCharts.value).forEach(chart => {
-        chart?.dispose();
-    });
-    myCharts.value = {};
+  console.log('AI聊天组件将被停用');
+  // 关闭SSE连接以避免资源泄漏
+  closeSSE();
+  
+  // 清除打字机计时器
+  if (typewriterTimer !== null) {
+    clearInterval(typewriterTimer);
+    typewriterTimer = null;
+  }
 });
 
-// 组件卸载时的清理工作
+// 组件卸载时清理
 onUnmounted(() => {
-    chartAnalysisStore.chartIdToTaskIdMap.clear();
-
-    // 关闭所有SSE连接
-    Object.keys(eventSources.value).forEach(chartId => {
-        closeSSEConnection(Number(chartId));
-    });
+  closeSSE();
+  
+  // 清除打字机计时器
+  if (typewriterTimer !== null) {
+    clearInterval(typewriterTimer);
+    typewriterTimer = null;
+  }
 });
 </script>
 
 <style scoped>
-/* 状态样式 */
-.status-badge {
-    padding: 4px 12px;
-    border-radius: 16px;
-    font-size: 14px;
-    font-weight: 500;
+.ai-chat-container {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 9999;
 }
 
-.status-succeed {
-    background-color: #f6ffed;
-    border: 1px solid #b7eb8f;
-    color: #52c41a;
+.ai-chat-button {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #1890ff;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.4);
+  transition: all 0.3s ease;
+  font-size: 24px;
 }
 
-.status-wait {
-    background-color: #e6f7ff;
-    border: 1px solid #91d5ff;
-    color: #1890ff;
+.ai-chat-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(24, 144, 255, 0.6);
 }
 
-.status-failed {
-    background-color: #fff2f0;
-    border: 1px solid #ffccc7;
-    color: #f5222d;
+.ai-chat-window {
+  width: 380px;
+  max-height: 500px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
 }
 
-.status-running {
-    background-color: #fffbe6;
-    border: 1px solid #ffe58f;
-    color: #faad14;
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-.my-chart-container {
-    padding: 24px;
-    background-color: #f5f5f5;
-    min-height: 100vh;
+.ai-chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f0f2f5;
+  border-bottom: 1px solid #e8e8e8;
 }
 
-.search-card {
-    margin-bottom: 24px;
-    padding: 16px;
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: #333;
 }
 
-.search-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+.ai-chat-header .anticon-close {
+  cursor: pointer;
+  color: #999;
+  transition: color 0.3s;
 }
 
-.search-label {
-    font-weight: 500;
-    font-size: 14px;
+.ai-chat-header .anticon-close:hover {
+  color: #666;
 }
 
-.chart-card {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
+.ai-chat-messages {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  background-color: #fafafa;
 }
 
-.chart-info {
-    margin-bottom: 16px;
+.message {
+  margin-bottom: 16px;
+  display: flex;
 }
 
-.info-item {
-    margin-bottom: 8px;
-    display: flex;
+.message.user {
+  justify-content: flex-end;
 }
 
-.info-label {
-    font-weight: 500;
-    width: 80px;
-    flex-shrink: 0;
+.message.ai {
+  justify-content: flex-start;
 }
 
-.info-value {
-    flex: 1;
-    word-break: break-word;
+.message-content {
+  max-width: 70%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  line-height: 1.5;
 }
 
-.chart-preview {
-    flex: 1;
-    min-height: 300px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.message.user .message-content {
+  background-color: #1890ff;
+  color: white;
+  border-bottom-right-radius: 2px;
 }
 
-.chart-canvas {
-    width: 100%;
-    height: 100%;
-    min-height: 300px;
+.message.ai .message-content {
+  background-color: white;
+  color: #333;
+  border: 1px solid #e8e8e8;
+  border-bottom-left-radius: 2px;
 }
 
-.progress-container {
-    padding: 20px;
-    text-align: center;
+.loading {
+  display: flex;
+  justify-content: flex-start;
+  padding: 10px 14px;
+  margin-bottom: 16px;
 }
 
-.progress-text {
-    margin-top: 8px;
-    color: #666;
-    font-size: 14px;
+.loading .anticon-loading {
+  font-size: 20px;
+  color: #1890ff;
+  animation: spin 1s linear infinite;
+  background-color: white;
+  border: 1px solid #e8e8e8;
+  padding: 8px 12px;
+  border-radius: 8px;
 }
 
-.pagination-container {
-    margin-top: 24px;
-    text-align: center;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-@media (max-width: 1200px) {
-    .search-item {
-        flex-direction: column;
-    }
-
-    .search-label {
-        margin-bottom: 4px;
-    }
+.ai-chat-input {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #e8e8e8;
+  background-color: white;
 }
 
-@media (max-width: 768px) {
-    .my-chart-container {
-        padding: 16px;
-    }
-
-    .search-card {
-        padding: 12px;
-    }
-
-    .chart-preview {
-        min-height: 200px;
-    }
-
-    .chart-canvas {
-        min-height: 200px;
-    }
+.ai-chat-input .ant-input {
+  flex: 1;
 }
 </style>

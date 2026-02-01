@@ -2,7 +2,9 @@
   <div id="basicLayout">
     <a-layout>
       <a-layout-header class="header">
-        <keep-alive><GlobalHeader /></keep-alive>
+        <keep-alive>
+          <GlobalHeader />
+        </keep-alive>
       </a-layout-header>
       <a-layout-content class="content">
         <router-view v-slot="{ Component }">
@@ -18,7 +20,9 @@
       </a-layout-footer>
     </a-layout>
     <!-- AI对话组件 -->
-    <AIChat />
+    <keep-alive>
+      <AIChat />
+    </keep-alive>
   </div>
 </template>
 
