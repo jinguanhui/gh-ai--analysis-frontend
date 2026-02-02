@@ -20,7 +20,7 @@
           <div class="header-content">
             <RobotOutlined theme="twoTone" two-tone-color="white" />
             <span class="assistant-name">光吾AI助理</span>
-            <CloseOutlined class="exit-button" theme="twoTone" two-tone-color="white" @click="toggleChatWindow"/>
+            <CloseOutlined class="exit-button" theme="twoTone" two-tone-color="white" @click="toggleChatWindow" />
           </div>
         </div>
       </div>
@@ -33,8 +33,7 @@
               <RobotOutlined theme="twoTone" two-tone-color="#1890ff" />
             </div>
             <div class="message-content">
-              <a-card>
-                {{ msg.content }}
+              <a-card v-html="msg.content">
               </a-card>
             </div>
           </div>
@@ -48,7 +47,6 @@
           </div>
         </div>
       </div>
-
       <div class="ai-chat-input">
         <a-input v-model:value="inputMessage" placeholder="请输入您的问题..." @keyup.enter="sendMessage"
           :disabled="isLoading" />
@@ -62,12 +60,13 @@
 
 <script setup lang="ts">
 import {
-  RobotOutlined,CloseOutlined,LoadingOutlined,
+  RobotOutlined, CloseOutlined, LoadingOutlined,
 } from '@ant-design/icons-vue';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import myAxios from '@/request';
 import { useAiChatStore } from '@/store/useAiChatStore';
+import router from '@/router';
 
 // 获取AI聊天状态管理
 const aiChatStore = useAiChatStore();
@@ -236,6 +235,11 @@ const initChat = async () => {
   }
 };
 
+// 用于标记是否正在刷新token（与request.ts保持一致）
+let isRefreshing = false;
+// 用于存储等待刷新token的SSE请求队列
+let sseRequests: Array<{ msgContent: string }> = [];
+
 // 发送消息
 const sendMessage = async () => {
   if (!inputMessage.value || isLoading.value) return;
@@ -266,14 +270,94 @@ const sendMessage = async () => {
       sseUrl += `&token=${token}`;
     }
 
+    const response = await fetch(sseUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'text/event-stream'
+      },
+      cache: 'no-cache'
+    });
+
+    // 检查状态码
+    if (response.status !== 200) {
+      console.error('AI聊天SSE连接失败，状态码:', response.status);
+
+      // 处理401状态码（token失效）
+      if (response.status === 401) {
+        // 如果正在刷新token，将当前请求加入队列
+        if (isRefreshing) {
+          return new Promise((resolve) => {
+            sseRequests.push({ msgContent: msgContent });
+            resolve(null);
+          });
+        }
+        // 标记开始刷新token
+        isRefreshing = true;
+        try {
+          // 调用刷新token接口（使用myAxios实例）
+          const refreshResponse = await myAxios.post('/user/refreshToken');
+
+          if (refreshResponse.data.code === 200 && refreshResponse.data.data) {
+            // 存储新的token
+            const newToken = refreshResponse.data.data;
+            localStorage.setItem('token', newToken);
+            console.log('token已刷新成功，新token:', newToken);
+
+            // 处理队列中的SSE请求
+            sseRequests.forEach(req => {
+              sendMessage();
+            });
+            sseRequests = [];
+
+            // 重新尝试建立SSE连接
+            sendMessage();
+            return;
+          } else {
+            // 刷新token失败，跳转到登录页面
+            message.error('登录已过期，请重新登录');
+            localStorage.removeItem('token');
+            await myAxios.post('/user/logout');
+            router.push('/user/login');
+          }
+
+        } catch (refreshError) {
+          // 刷新token失败，跳转到登录页面
+          message.error('登录已过期，请重新登录');
+          localStorage.removeItem('token');
+          await myAxios.post('/user/logout');
+          router.push('/user/login');
+        } finally {
+          // 标记刷新token完成
+          isRefreshing = false;
+        }
+
+        isLoading.value = false;
+        return;
+      } else {
+        // 其他错误状态码
+        message.error(`AI聊天连接失败: ${response.statusText}`);
+        isLoading.value = false;
+        return;
+      }
+    }
+
+
     eventSource = new EventSource(sseUrl);
     console.log('AI聊天SSE连接已建立：', sseUrl);
 
     // 接收消息
     eventSource.onmessage = (event) => {
       try {
-        const data = event.data;
+        let data = JSON.parse(event.data);
         if (data) {
+          // 尝试解析JSON数据，如果失败则直接使用原始数据
+          try {
+            const parsedData = JSON.parse(data);
+            data = parsedData;
+          } catch (jsonError) {
+            // 如果解析失败，可能是HTML格式或特殊格式，直接使用原始数据
+            console.log('JSON解析失败，使用原始数据:', data);
+          }
           // 如果是新的AI消息开始，创建空消息并开始打字机效果
           if (currentAiMessageIndex === null) {
             currentAiMessageIndex = chatMessages.value.length;
@@ -340,6 +424,11 @@ const sendMessage = async () => {
     message.error('发送消息失败');
     isLoading.value = false;
   }
+};
+
+// 将router实例挂载到window对象，以便在HTML中访问
+if (typeof window !== 'undefined') {
+  (window as any).aiRouter = router;
 };
 
 // 关闭SSE连接
@@ -424,6 +513,7 @@ onUnmounted(() => {
   width: 25px;
   height: 25px;
 }
+
 .exit-button {
   cursor: pointer;
   color: rgb(0, 0, 0);
@@ -588,7 +678,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 10px 20px;
-  background: linear-gradient(90deg, rgb(114, 161, 237) 10%, #84c1fb 30%, #9c65ea 70%,#e6dbf6 100%);
+  background: linear-gradient(90deg, rgb(114, 161, 237) 10%, #84c1fb 30%, #9c65ea 70%, #e6dbf6 100%);
   border-bottom: none;
   cursor: move;
   width: 100%;
@@ -641,15 +731,15 @@ onUnmounted(() => {
 .message-container {
   display: flex;
   align-items: flex-start;
-  max-width: 100%;
 }
 
 
 .message-content {
-  max-width: calc(100% - 40px);
+  /* max-width: calc(100% - 40px); */
   flex: 1;
   word-break: break-word;
   white-space: normal;
+
 }
 
 .message-content .ant-card {
@@ -657,6 +747,7 @@ onUnmounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   word-break: break-word;
   white-space: normal;
+  padding: 10px 10px;
 }
 
 .message.user .message-content .ant-card {
@@ -712,6 +803,6 @@ onUnmounted(() => {
 
 .ai-chat-input .ant-input {
   flex: 1;
-  
+
 }
 </style>

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { userLogout } from "@/api/user";
 import { message } from "ant-design-vue";
+import router from "./router";
 
 console.log(process.env.NODE_ENV);
 
@@ -14,7 +15,7 @@ const myAxios = axios.create({
 // 用于标记是否正在刷新token
 let isRefreshing = false;
 // 用于存储等待刷新token的请求队列
-let requests:any[] = [];
+let requests: any[] = [];
 
 // Add a request interceptor
 myAxios.interceptors.request.use(
@@ -29,7 +30,7 @@ myAxios.interceptors.request.use(
       //  随机数
     }
 
-    if (config.url?.includes("/chart/gen") ) {
+    if (config.url?.includes("/chart/gen")) {
       config.headers.signature = localStorage.getItem("encryptPublicKey");
     }
     return config;
@@ -63,7 +64,7 @@ myAxios.interceptors.response.use(
       // 如果不是登录页面，则尝试刷新token
       if (!window.location.pathname.includes("/user/login")) {
         const originalRequest = error.config;
-        
+
         // 如果正在刷新token，则将请求加入队列
         if (isRefreshing) {
           return new Promise((resolve) => {
@@ -73,27 +74,27 @@ myAxios.interceptors.response.use(
             });
           });
         }
-        
+
         // 标记开始刷新token
         isRefreshing = true;
-        
+
         try {
           // 调用刷新token接口
           console.log("token已过期，使用refreshToken刷新token！");
           const refreshResponse = await myAxios.post("/user/refreshToken");
-          
+
           if (refreshResponse.data.code === 200 && refreshResponse.data.data) {
             // 存储新的token
             const newToken = refreshResponse.data.data;
             localStorage.setItem("token", newToken);
-            
+
             // 更新当前请求的token
             originalRequest.headers.token = newToken;
-            
+
             // 处理队列中的请求
             requests.forEach(cb => cb(newToken));
             requests = [];
-            
+
             // 重新发送原请求
             return myAxios(originalRequest);
           } else {
@@ -101,15 +102,15 @@ myAxios.interceptors.response.use(
             localStorage.removeItem("token");
             //  移除refreshToken
             await userLogout();
-            window.location.href = `/user/login?redirect=${window.location.href}`;
+            router.push("/user/login");
             return Promise.reject(error);
           }
         } catch (refreshError) {
           // 刷新token失败，跳转到登录页面
           //  移除refreshToken
-            await userLogout();
-            localStorage.removeItem("token");
-          window.location.href = `/user/login?redirect=${window.location.href}`;
+          await userLogout();
+          localStorage.removeItem("token");
+          router.push("/user/login");
           return Promise.reject(refreshError);
         } finally {
           // 标记刷新token完成
@@ -118,11 +119,16 @@ myAxios.interceptors.response.use(
       }
     }
 
+    if (response.status === 406) {
+      router.push("/user/login");
+      return Promise.reject(error);
+    }
+
     if (response.status !== 200) {
       message.error("操作失败！");
       return Promise.reject(error);
     }
-    
+
     // 其他错误情况
     return Promise.reject(error);
   }
