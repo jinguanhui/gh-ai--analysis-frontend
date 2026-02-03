@@ -1,6 +1,6 @@
 <template>
   <div class="ai-analysis-container">
-    <h1>AI数据分析</h1>
+    <h1>消息队列AI数据分析</h1>
     <a-layout class="ai-analysis-layout">
       <!-- 左侧侧边栏 -->
       <a-layout-sider v-model:collapsed="collapsed" :width="350" :collapsible="true" :trigger="null"
