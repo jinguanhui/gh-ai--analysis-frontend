@@ -16,23 +16,13 @@
               <div class="login-info">
                 <div class="login-name">
                   用户名: {{ userInfo.username || '未设置' }}
-                  <a-button
-                    type="text"
-                    size="small"
-                    @click="handleEditField('username')"
-                    class="edit-btn"
-                  >
+                  <a-button type="text" size="small" @click="handleEditField('username')" class="edit-btn">
                     <EditOutlined />
                   </a-button>
                 </div>
                 <div class="account-id">
                   账号ID: {{ userInfo.id || '无' }}
-                  <a-button
-                    type="text"
-                    size="small"
-                    class="copy-btn"
-                    @click="handleCopyId"
-                  >
+                  <a-button type="text" size="small" class="copy-btn" @click="handleCopyId">
                     <CopyOutlined />
                   </a-button>
                 </div>
@@ -51,12 +41,7 @@
                   <div class="item-label">性别</div>
                   <div class="item-value">
                     <span class="value">{{ getGenderText(userInfo.gender) }}</span>
-                    <a-button
-                      type="text"
-                      size="small"
-                      @click="handleEditField('gender')"
-                      class="action-btn"
-                    >
+                    <a-button type="text" size="small" @click="handleEditField('gender')" class="action-btn">
                       <EditOutlined />
                     </a-button>
                   </div>
@@ -67,12 +52,7 @@
                   <div class="item-label">邮箱</div>
                   <div class="item-value">
                     <span class="value">{{ userInfo.email || '未设置' }}</span>
-                    <a-button
-                      type="text"
-                      size="small"
-                      @click="handleEditField('email')"
-                      class="action-btn"
-                    >
+                    <a-button type="text" size="small" @click="handleEditField('email')" class="action-btn">
                       <EditOutlined />
                     </a-button>
                   </div>
@@ -83,12 +63,7 @@
                   <div class="item-label">手机号</div>
                   <div class="item-value">
                     <span class="value">{{ userInfo.phone || '未设置' }}</span>
-                    <a-button
-                      type="text"
-                      size="small"
-                      @click="handleEditField('phone')"
-                      class="action-btn"
-                    >
+                    <a-button type="text" size="small" @click="handleEditField('phone')" class="action-btn">
                       <EditOutlined />
                     </a-button>
                   </div>
@@ -102,6 +77,14 @@
                   </div>
                 </div>
               </a-col>
+              <a-col :span="12">
+                <!-- 更改密码 -->
+                <div v-if="userInfo.isThirdUser === 0">
+                  <a-button style="margin-top: 10px;" type="primary"  @click="handleChangePassword">
+                    更改密码
+                  </a-button>
+                </div>
+              </a-col>
             </a-row>
           </div>
         </a-card>
@@ -111,13 +94,8 @@
     </div>
 
     <!-- 编辑模态框 -->
-    <a-modal
-      v-model:open="editModalVisible"
-      title="编辑信息"
-      @ok="handleModalOk"
-      @cancel="handleModalCancel"
-      ok-text="确认" cancel-text="取消"
-    >
+    <a-modal v-model:open="editModalVisible" title="编辑信息" @ok="handleModalOk" @cancel="handleModalCancel" ok-text="确认"
+      cancel-text="取消">
       <a-form :model="editForm" layout="vertical">
         <a-form-item label="用户名" v-if="currentEditField === 'username'">
           <a-input v-model:value="editForm.username" />
@@ -138,14 +116,57 @@
       </a-form>
     </a-modal>
 
+    <!-- 验证码模态框 -->
+    <a-modal v-model:open="codeModalVisible" title="验证手机号" @ok="handleCodeModalOk" @cancel="handleCodeModalCancel"
+      ok-text="确认" cancel-text="取消">
+      <a-form :model="phoneCodeForm" layout="vertical">
+        <a-form-item label="手机号">
+          <a-input v-model:value="phoneCodeForm.phone" placeholder="请输入新手机号" disabled />
+        </a-form-item>
+        <a-form-item label="验证码">
+          <a-row :gutter="16">
+            <a-col :span="16">
+              <a-input v-model:value="phoneCodeForm.code" placeholder="请输入验证码" />
+            </a-col>
+            <a-col :span="8">
+              <a-button type="primary" @click="handleSendCode" :disabled="countdown > 0" block>
+                {{ countdown > 0 ? `${countdown}秒后重发` : '发送验证码' }}
+              </a-button>
+            </a-col>
+          </a-row>
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+     <!-- 修改密码模态框 -->
+    <a-modal v-model:open="changePasswordModalVisible" title="修改密码" @ok="handleChangePasswordOk" @cancel="handleChangePasswordCancel"
+      ok-text="确认" cancel-text="取消">
+      <a-form :model="changePasswordForm" layout="vertical">
+        <a-form-item label="新密码">
+          <a-input-password v-model:value="changePasswordForm.password" placeholder="请输入新密码" />
+        </a-form-item>
+        <a-form-item label="手机号">
+          <a-input v-model:value="changePasswordForm.phone" placeholder="请输入手机号" disabled />
+        </a-form-item>
+        <a-form-item label="验证码">
+          <a-row :gutter="16">
+            <a-col :span="16">
+              <a-input v-model:value="changePasswordForm.code" placeholder="请输入验证码" />
+            </a-col>
+            <a-col :span="8">
+              <a-button type="primary" @click="handleSendChangePasswordCode" :disabled="countdown > 0" block>
+                {{ countdown > 0 ? `${countdown}秒后重发` : '发送验证码' }}
+              </a-button>
+            </a-col>
+          </a-row>
+        </a-form-item>
+        
+      </a-form>
+    </a-modal>
+
     <!-- 头像上传模态框 -->
-    <a-modal
-      v-model:open="avatarModalVisible"
-      title="更换头像"
-      @ok="handleAvatarOk"
-      @cancel="handleAvatarCancel"
-      ok-text="确认" cancel-text="取消"
-    >
+    <a-modal v-model:open="avatarModalVisible" title="更换头像" @ok="handleAvatarOk" @cancel="handleAvatarCancel"
+      ok-text="确认" cancel-text="取消">
       <div class="avatar-upload-container">
         <div class="avatar-preview">
           <a-avatar :size="120" :src="avatarPreviewUrl">
@@ -153,12 +174,7 @@
           </a-avatar>
         </div>
         <div class="avatar-upload-btn">
-          <a-upload
-            name="avatar"
-            :before-upload="handleBeforeUpload"
-            :show-upload-list="false"
-            accept="image/*"
-          >
+          <a-upload name="avatar" :before-upload="handleBeforeUpload" :show-upload-list="false" accept="image/*">
             <a-button>
               <UploadOutlined /> 选择头像
             </a-button>
@@ -170,7 +186,8 @@
 </template>
 
 <script setup lang="ts">
-import { searchUserOne, updateUser } from '@/api/user';
+import { searchUserOne, updateUser, userLogout } from '@/api/user';
+import { sendChangePhoneCode, verifyChangePhoneCode, sendChangePsdCode, verifyChangePsdCode  } from '@/api/sms';
 import { useLoginUserStore } from '@/store/useLoginUserStore';
 import {
   CopyOutlined,
@@ -180,6 +197,7 @@ import {
 } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import { onMounted, reactive, ref } from 'vue';
+import router from '@/router';
 
 const loginUserStore = useLoginUserStore(); // 创建loginUserStore实例
 
@@ -201,6 +219,7 @@ interface UserInfo {
   salt?: string;
   invokeCount?: number;
   token?: string;
+  isThirdUser?: number;
 }
 
 // 用户信息
@@ -219,6 +238,106 @@ const editForm = reactive<Partial<UserInfo>>({
 const avatarModalVisible = ref(false);
 const avatarPreviewUrl = ref<string | undefined>(undefined);
 const selectedAvatarFile = ref<File | null>(null);
+
+// 验证码模态框相关
+const codeModalVisible = ref(false);
+const phoneCodeForm = reactive({
+  phone: '',
+  code: ''
+});
+const countdown = ref(0);
+const timer = ref<number | null>(null);
+
+  // 修改密码相关
+const changePasswordModalVisible = ref(false);
+const changePasswordForm = reactive({
+  phone: '',
+  code: '',
+  password: ''
+});
+
+// 处理修改密码
+const handleChangePassword = () => {
+  if (!userInfo.phone) {
+    message.error('请先绑定手机号');
+    return;
+  }
+  changePasswordForm.phone = userInfo.phone;
+  changePasswordModalVisible.value = true;
+};
+// 发送修改密码验证码
+const handleSendChangePasswordCode = async () => {
+  if (!changePasswordForm.phone) {
+    message.error('请输入手机号');
+    return;
+  }
+  try {
+    const response = await sendChangePsdCode({ phone: changePasswordForm.phone });
+    if (response.data.code === 200) {
+      message.success('验证码发送成功');
+      startCountdown();
+    } else {
+      message.error(response.data.message || '验证码发送失败');
+    }
+  } catch (error) {
+    console.error('发送验证码失败:', error);
+    message.error('验证码发送失败');
+  }
+};
+// 处理修改密码确定
+const handleChangePasswordOk = async () => {
+  if (!changePasswordForm.phone || !changePasswordForm.code || !changePasswordForm.password) {
+    message.error('请填写完整信息');
+    return;
+  }
+  // 验证密码强度
+  if (changePasswordForm.password.length < 6) {
+    message.error('密码长度不能少于6位');
+    return;
+  }
+  const updateMessageKey = 'updatePasswordMessage';
+  message.loading({ content: '修改密码中...', key: updateMessageKey });
+  try {
+    // 验证验证码并修改密码
+    const response = await verifyChangePsdCode(changePasswordForm);
+    if (response.data.code === 200) {
+      message.success({ content: '密码修改成功，请重新登录', key: updateMessageKey });
+      changePasswordModalVisible.value = false;
+      
+      // 清空表单
+      changePasswordForm.code = '';
+      changePasswordForm.password = '';
+      
+      await userLogout(loginUserStore.loginUser.id);
+      localStorage.removeItem('token');
+      loginUserStore.loginUser = {};
+
+    
+      // 跳转到登录页
+      setTimeout( () => {
+        router.push('/user/login');
+      }, 1500);
+    } else {
+      message.error({ content: response.data.message || '密码修改失败', key: updateMessageKey });
+    }
+  } catch (error) {
+    console.error('修改密码失败:', error);
+    message.error({ content: '密码修改失败', key: updateMessageKey });
+  }
+};
+// 处理修改密码取消
+const handleChangePasswordCancel = () => {
+  changePasswordModalVisible.value = false;
+  // 清空表单
+  changePasswordForm.code = '';
+  changePasswordForm.password = '';
+  // 清除倒计时
+  if (timer.value) {
+    clearInterval(timer.value);
+    timer.value = null;
+    countdown.value = 0;
+  }
+};
 
 // 复制账号ID
 const handleCopyId = () => {
@@ -278,18 +397,18 @@ const handleAvatarOk = async () => {
       file: selectedAvatarFile.value,
       user: { ...userInfo }
     });
-    
+
     if (response.data.code === 200) {
       // 更新本地用户信息 - 实际项目中应该根据后端返回的头像URL更新
       // 这里简单使用预览URL作为头像URL
       userInfo.avatarUrl = avatarPreviewUrl.value;
-      
+
       // 更新loginUserStore中的头像信息
       loginUserStore.setLoginUser({
         ...loginUserStore.loginUser,
         avatarUrl: avatarPreviewUrl.value
       });
-      
+
       message.success({ content: '头像更新成功', key: updateMessageKey });
       avatarModalVisible.value = false;
     } else {
@@ -312,7 +431,7 @@ const handleAvatarCancel = () => {
 const loadUserInfo = async () => {
   const loadMessageKey = 'loadUserInfoMessage';
   message.loading({ content: '加载用户信息中...', key: loadMessageKey });
-  
+
   try {
     const response = await searchUserOne();
     if (response.data.code === 200 && response.data.data) {
@@ -329,7 +448,8 @@ const loadUserInfo = async () => {
       userInfo.createTime = data.createTime;
       userInfo.userRole = data.userRole;
       userInfo.invokeCount = data.invokeCount;
-      
+      userInfo.isThirdUser = data.isThirdUser;
+
       message.success({ content: '加载用户信息成功', key: loadMessageKey });
     } else {
       message.error({ content: '获取用户信息失败', key: loadMessageKey });
@@ -342,35 +462,136 @@ const loadUserInfo = async () => {
 
 // 处理编辑字段
 const handleEditField = (field: string) => {
-  currentEditField.value = field;
-  // 初始化编辑表单
-  if (userInfo[field as keyof UserInfo] !== undefined) {
-    editForm[field as keyof UserInfo] = userInfo[field as keyof UserInfo];
+  if (field === 'phone') {
+    // 如果是修改手机号，先打开编辑模态框
+    currentEditField.value = field;
+    if (userInfo[field as keyof UserInfo] !== undefined) {
+      editForm[field as keyof UserInfo] = userInfo[field as keyof UserInfo];
+    }
+    editModalVisible.value = true;
+  } else {
+    // 其他字段直接打开编辑模态框
+    currentEditField.value = field;
+    if (userInfo[field as keyof UserInfo] !== undefined) {
+      editForm[field as keyof UserInfo] = userInfo[field as keyof UserInfo];
+    }
+    editModalVisible.value = true;
   }
-  editModalVisible.value = true;
+};
+
+// 发送验证码
+const handleSendCode = async () => {
+  if (!phoneCodeForm.phone) {
+    message.error('请输入手机号');
+    return;
+  }
+
+  try {
+    const response = await sendChangePhoneCode({ phone: phoneCodeForm.phone });
+    if (response.data.code === 200) {
+      message.success('验证码发送成功');
+      startCountdown();
+    } else {
+      message.error(response.data.message || '验证码发送失败');
+    }
+  } catch (error) {
+    console.error('发送验证码失败:', error);
+    message.error('验证码发送失败');
+  }
+};
+
+// 开始倒计时
+const startCountdown = () => {
+  countdown.value = 60;
+  timer.value = window.setInterval(() => {
+    countdown.value--;
+    if (countdown.value <= 0) {
+      clearInterval(timer.value as number);
+      timer.value = null;
+    }
+  }, 1000);
+};
+
+// 验证验证码并更新手机号
+const handleCodeModalOk = async () => {
+  if (!phoneCodeForm.phone || !phoneCodeForm.code) {
+    message.error('请输入手机号和验证码');
+    return;
+  }
+
+  const updateMessageKey = 'updatePhoneMessage';
+  message.loading({ content: '更新手机号中...', key: updateMessageKey });
+
+  try {
+    // 先验证验证码
+    const verifyResponse = await verifyChangePhoneCode({
+      phone: phoneCodeForm.phone,
+      code: phoneCodeForm.code
+    });
+
+    if (verifyResponse.data.code === 200) {
+      message.success({ content: '更新手机号完成', key: updateMessageKey });
+      codeModalVisible.value = false;
+      loadUserInfo();
+
+    } else {
+      message.error({ content: '验证码错误', key: updateMessageKey });
+    }
+  } catch (error) {
+    console.error('更新手机号失败:', error);
+    message.error({ content: '更新手机号失败', key: updateMessageKey });
+  }
+};
+
+// 关闭验证码模态框
+const handleCodeModalCancel = () => {
+  codeModalVisible.value = false;
+  // 重置表单
+  phoneCodeForm.phone = '';
+  phoneCodeForm.code = '';
+  // 清除倒计时
+  if (timer.value) {
+    clearInterval(timer.value);
+    timer.value = null;
+    countdown.value = 0;
+  }
 };
 
 // 处理模态框确定
 const handleModalOk = async () => {
-  const updateMessageKey = 'updateUserInfoMessage';
-  message.loading({ content: '更新信息中...', key: updateMessageKey });
-  
-  try {
-    // 更新用户信息
-    const updateData = { [currentEditField.value]: editForm[currentEditField.value] };
-    const response = await updateUser({ ...userInfo, ...updateData });
-    
-    if (response.data.code === 200) {
-      // 更新本地数据
-      Object.assign(userInfo, updateData);
-      message.success({ content: '更新成功', key: updateMessageKey });
-      editModalVisible.value = false;
-    } else {
+  if (currentEditField.value === 'phone') {
+    // 如果是修改手机号，先验证手机号格式，然后打开验证码模态框
+    const phoneRegex = /^1[3-9]\d{9}$/;
+    if (!phoneRegex.test(editForm.phone as string)) {
+      message.error('请输入正确的手机号格式');
+      return;
+    }
+    // 关闭编辑模态框，打开验证码模态框
+    editModalVisible.value = false;
+    phoneCodeForm.phone = editForm.phone as string;
+    codeModalVisible.value = true;
+  } else {
+    // 其他字段直接更新
+    const updateMessageKey = 'updateUserInfoMessage';
+    message.loading({ content: '更新信息中...', key: updateMessageKey });
+
+    try {
+      // 更新用户信息
+      const updateData = { [currentEditField.value]: editForm[currentEditField.value] };
+      const response = await updateUser({ ...userInfo, ...updateData });
+
+      if (response.data.code === 200) {
+        // 更新本地数据
+        Object.assign(userInfo, updateData);
+        message.success({ content: '更新成功', key: updateMessageKey });
+        editModalVisible.value = false;
+      } else {
+        message.error({ content: '更新失败', key: updateMessageKey });
+      }
+    } catch (error) {
+      console.error('更新失败:', error);
       message.error({ content: '更新失败', key: updateMessageKey });
     }
-  } catch (error) {
-    console.error('更新失败:', error);
-    message.error({ content: '更新失败', key: updateMessageKey });
   }
 };
 
@@ -535,7 +756,7 @@ onMounted(() => {
   .main-content {
     flex-direction: column;
   }
-  
+
   .user-basic-info {
     flex-direction: column;
     align-items: flex-start;

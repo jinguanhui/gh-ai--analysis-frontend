@@ -60,9 +60,10 @@ myAxios.interceptors.response.use(
   async function (error) {
     const { response } = error;
     // 处理401状态码（token失效）- 修复了条件判断的语法错误
-    if (response && (response.status === 401 || response.status === 403)) {
+    if (response && (response.status === 401 || response.status === 403) && !error.config.url.includes("/user/logout")) {
       // 如果不是登录页面，则尝试刷新token
-      if (!window.location.pathname.includes("/user/login")) {
+      if (!window.location.pathname.includes("/user/login")
+        ) {
         const originalRequest = error.config;
 
         // 如果正在刷新token，则将请求加入队列
@@ -100,15 +101,20 @@ myAxios.interceptors.response.use(
           } else {
             // 刷新token失败，跳转到登录页面
             localStorage.removeItem("token");
-            //  移除refreshToken
-            await userLogout();
+            const userId = localStorage.getItem("userId");
+            if (userId) {
+              await userLogout(userId);
+            }
             router.push("/user/login");
             return Promise.reject(error);
           }
         } catch (refreshError) {
           // 刷新token失败，跳转到登录页面
           //  移除refreshToken
-          await userLogout();
+          const userId = localStorage.getItem("userId");
+            if (userId) {
+              await userLogout(userId);
+            }
           localStorage.removeItem("token");
           router.push("/user/login");
           return Promise.reject(refreshError);

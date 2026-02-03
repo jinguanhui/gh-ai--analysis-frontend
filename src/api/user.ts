@@ -15,10 +15,15 @@ export const userRegister = async (params: any) => {
 /**
  * 用户登出
  */
-export const userLogout = async () => {
+export const userLogout = async (id: string) => {
   return myAxios.request({
     url: "/user/logout",
     method: "POST",
+    data: id,
+    // 关键点：要传递 JSON 格式的值
+    headers: {
+      "Content-Type": "application/json",
+    },
   });
 };
 

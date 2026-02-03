@@ -13,7 +13,7 @@ export const useLoginUserStore = defineStore("loginUser", () => {
   async function doLogout() {
     try {
       // 调用后端登出接口，将refreshToken从cookie中清除
-      await userLogout();
+      await userLogout(loginUser.value.id);
       // 清除本地登录状态
       loginUser.value = { username: "未登录" };
       // 清除 localStorage 中的用户信息
@@ -36,6 +36,7 @@ export const useLoginUserStore = defineStore("loginUser", () => {
   // 单独设置信息
   function setLoginUser(newLoginUser: any) {
     loginUser.value = newLoginUser;
+    localStorage.setItem("userId", newLoginUser.id);
     // 保存到 localStorage
     localStorage.setItem("loginUser", JSON.stringify(newLoginUser));
     if (newLoginUser.token) {
