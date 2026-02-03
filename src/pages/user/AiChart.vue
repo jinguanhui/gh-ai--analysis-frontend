@@ -25,7 +25,23 @@
         </div>
       </div>
 
-      <div class="ai-chat-messages">
+      <!-- 登录检查 -->
+      <div v-if="loginUserStore.loginUser.username === '未登录' || !loginUserStore.loginUser">
+        <div class="login-prompt">
+          <div class="prompt-content">
+            <h3>你好，我是光吾AI助理</h3>
+            <div class="prompt-icon">
+              <span class="icon-cross"></span>
+            </div>
+            <div class="prompt-buttons">
+              <a-button type="primary" href="/user/login">前往登录</a-button>
+              <a-button href="/user/register">快速注册</a-button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="ai-chat-messages" ref="chatMessagesContainer">
         <div class="message" v-for="(msg, index) in chatMessages" :key="index" :class="msg.type">
           <div class="message-container">
             <!-- AI消息显示机器人图标 -->
@@ -62,14 +78,16 @@
 import {
   RobotOutlined, CloseOutlined, LoadingOutlined,
 } from '@ant-design/icons-vue';
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { message } from 'ant-design-vue';
 import myAxios from '@/request';
 import { useAiChatStore } from '@/store/useAiChatStore';
 import router from '@/router';
+import { useLoginUserStore } from '@/store/useLoginUserStore';
 
 // 获取AI聊天状态管理
 const aiChatStore = useAiChatStore();
+const loginUserStore = useLoginUserStore();
 
 // 聊天状态
 const isChatWindowOpen = ref(false);
@@ -104,7 +122,16 @@ let typewriterTimer: number | null = null;
 //     transform: `translate(${windowPosition.value.x}px, ${windowPosition.value.y}px)`
 //   };
 // });
-
+// 聊天消息容器引用
+const chatMessagesContainer = ref<HTMLElement | null>(null);
+// 滚动到底部函数
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (chatMessagesContainer.value) {
+      chatMessagesContainer.value.scrollTop = chatMessagesContainer.value.scrollHeight;
+    }
+  });
+};
 // 切换聊天窗口显示状态
 const toggleChatWindow = () => {
   isChatWindowOpen.value = !isChatWindowOpen.value;
@@ -229,6 +256,9 @@ const initChat = async () => {
       content: '您好！我是AI助手，有什么可以帮助您的吗？',
       isComplete: true
     });
+
+    // 滚动到底部
+    scrollToBottom();
   } finally {
     // 隐藏加载状态
     isLoading.value = false;
@@ -250,6 +280,8 @@ const sendMessage = async () => {
     type: 'user',
     content: msgContent
   });
+  // 滚动到底部
+  scrollToBottom();
   // 清空输入框
   inputMessage.value = '';
   // 显示加载状态
@@ -348,16 +380,16 @@ const sendMessage = async () => {
     // 接收消息
     eventSource.onmessage = (event) => {
       try {
-        let data = JSON.parse(event.data);
+        let data = event.data;
         if (data) {
           // 尝试解析JSON数据，如果失败则直接使用原始数据
-          try {
-            const parsedData = JSON.parse(data);
-            data = parsedData;
-          } catch (jsonError) {
-            // 如果解析失败，可能是HTML格式或特殊格式，直接使用原始数据
-            console.log('JSON解析失败，使用原始数据:', data);
-          }
+          // try {
+          //   const parsedData = JSON.parse(data);
+          //   data = parsedData;
+          // } catch (jsonError) {
+          //   // 如果解析失败，可能是HTML格式或特殊格式，直接使用原始数据
+          //   console.log('JSON解析失败，使用原始数据:', data);
+          // }
           // 如果是新的AI消息开始，创建空消息并开始打字机效果
           if (currentAiMessageIndex === null) {
             currentAiMessageIndex = chatMessages.value.length;
@@ -429,7 +461,7 @@ const sendMessage = async () => {
 // 将router实例挂载到window对象，以便在HTML中访问
 if (typeof window !== 'undefined') {
   (window as any).aiRouter = router;
-};
+}
 
 // 关闭SSE连接
 const closeSSE = () => {
@@ -465,6 +497,8 @@ const startTypewriterEffect = () => {
       // 更新当前显示的内容
       if (chatMessages.value[currentAiMessageIndex]) {
         chatMessages.value[currentAiMessageIndex].content = currentAiMessageContent.substring(0, charIndex + 1);
+        // 滚动到底部
+          scrollToBottom();
       }
       charIndex++;
     } else {
@@ -805,4 +839,80 @@ onUnmounted(() => {
   flex: 1;
 
 }
+
+/* 登录提示样式 */
+.login-prompt {
+  display: flex;
+  /* justify-content: center; */
+  /* align-items: center; */
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  background-color: #f5f5f5;
+}
+
+.prompt-content {
+  text-align: center;
+  padding: 40px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 90%;
+}
+
+.prompt-content h3 {
+  margin-bottom: 24px;
+  color: #333;
+  font-size: 20px;
+}
+
+.prompt-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.prompt-buttons .ant-btn {
+  padding: 8px 24px;
+  font-size: 16px;
+}
+
+.prompt-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 20px;
+  background: linear-gradient(75deg, rgb(114, 161, 237) 10%, #84c1fb 30%, #9c65ea 70%, #f9ad5c 90%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: white;
+}
+.icon-cross {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  position: relative;
+}
+.icon-cross::before,
+.icon-cross::after {
+  content: '';
+  position: absolute;
+  background-color: white;
+  border-radius: 2px;
+}
+.icon-cross::before {
+  width: 4px;
+  height: 24px;
+  left: 10px;
+  top: 0;
+}
+.icon-cross::after {
+  width: 24px;
+  height: 4px;
+  left: 0;
+  top: 10px;
+}
+
 </style>

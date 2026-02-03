@@ -72,7 +72,7 @@
 
         <a-card title="分析结果" :bordered="false" class="result-card">
           <!-- 进度条区域 -->
-          <ProgressBar :visible="isLoading" :percent="chartAnalysisStore.percentProcess"
+          <ProgressBar v-show="isLoading" :percent="chartAnalysisStore.percentProcess"
             :info="chartAnalysisStore.info" />
 
           <!-- 使用v-show替代v-if，确保DOM元素始终存在 -->
@@ -88,7 +88,7 @@
             </div>
           </div>
 
-          <div v-show="!chartAnalysisStore.analysisResult && chartAnalysisStore.percentProcess === 0" class="no-result">
+          <div v-show="!chartAnalysisStore.analysisResult && chartAnalysisStore.percentProcess === 0 && !isLoading" class="no-result">
             <a-empty description="暂无分析结果，请在左侧设置分析参数并点击开始分析" />
           </div>
         </a-card>
@@ -281,7 +281,7 @@ const handleAnalysis = async () => {
     // 2. 提交任务
     const initResponse = await myAxios.post('/chart/gen/sync', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 30000
+      timeout: 300000
     });
 
     const { code, data, message: resMsg } = initResponse.data;

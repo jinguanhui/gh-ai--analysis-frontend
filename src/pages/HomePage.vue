@@ -12,7 +12,7 @@ const msg = "欢迎来到GH智能数据分析系统，在这里你可以进行�
 // 将router实例挂载到window对象，以便在HTML中访问
 if (typeof window !== 'undefined') {
   (window as any).aiRouter = router;
-};
+}
 </script>
 
 <style scoped>
