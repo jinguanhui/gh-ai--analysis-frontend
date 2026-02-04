@@ -92,7 +92,7 @@
                 <div class="info-item">
                   <div class="item-label">上次登录IP</div>
                   <div class="item-value">
-                    <span class="value">{{  userInfo.loginPath || '未知'  }}</span>
+                    <span class="value">{{  userInfo.loginPath || ''  }}</span>
                   </div>
                 </div>
               </a-col>
@@ -101,6 +101,14 @@
                   <div class="item-label">上次登录时间</div>
                   <div class="item-value">
                     <span class="value">{{ formatDate(userInfo.lastLoginTime) }}</span>
+                  </div>
+                </div>
+              </a-col>
+              <a-col :span="12">
+                <div class="info-item">
+                  <div class="item-label">上次登录IP所属地</div>
+                  <div class="item-value">
+                    <span class="value">{{  userInfo.region || ''  }}</span>
                   </div>
                 </div>
               </a-col>
@@ -250,6 +258,7 @@ interface UserInfo {
   isThirdUser?: number;
   lastLoginTime?: Date;
   loginPath?: string;
+  region?: string;
 }
 
 // 用户信息
@@ -481,6 +490,7 @@ const loadUserInfo = async () => {
       userInfo.isThirdUser = data.isThirdUser;
       userInfo.lastLoginTime = data.lastLoginTime;
       userInfo.loginPath = data.loginPath;
+      userInfo.region = data.region;
 
       message.success({ content: '加载用户信息成功', key: loadMessageKey });
     } else {
