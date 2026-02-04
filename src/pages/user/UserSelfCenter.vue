@@ -29,6 +29,17 @@
                 <div class="user-account">
                   用户账号: {{ userInfo.userAccount || '未设置' }}
                 </div>
+                <div class="user-account">
+                  调用次数: {{ userInfo.invokeCount || '0' }}
+                  <a-popover title="支付宝充值续费">
+                    <template #content>
+                      <p>点击充值,增加调用次数</p>
+                    </template>
+                    <a-button type="primary">
+                      <AlipayOutlined />
+                    </a-button>
+                  </a-popover>
+                </div>
               </div>
             </div>
           </div>
@@ -78,9 +89,25 @@
                 </div>
               </a-col>
               <a-col :span="12">
+                <div class="info-item">
+                  <div class="item-label">上次登录IP</div>
+                  <div class="item-value">
+                    <span class="value">{{  userInfo.loginPath || '未知'  }}</span>
+                  </div>
+                </div>
+              </a-col>
+              <a-col :span="12">
+                <div class="info-item">
+                  <div class="item-label">上次登录时间</div>
+                  <div class="item-value">
+                    <span class="value">{{ formatDate(userInfo.lastLoginTime) }}</span>
+                  </div>
+                </div>
+              </a-col>
+              <a-col :span="12">
                 <!-- 更改密码 -->
                 <div v-if="userInfo.isThirdUser === 0">
-                  <a-button style="margin-top: 10px;" type="primary"  @click="handleChangePassword">
+                  <a-button style="margin-top: 10px;" type="primary" @click="handleChangePassword">
                     更改密码
                   </a-button>
                 </div>
@@ -138,9 +165,9 @@
       </a-form>
     </a-modal>
 
-     <!-- 修改密码模态框 -->
-    <a-modal v-model:open="changePasswordModalVisible" title="修改密码" @ok="handleChangePasswordOk" @cancel="handleChangePasswordCancel"
-      ok-text="确认" cancel-text="取消">
+    <!-- 修改密码模态框 -->
+    <a-modal v-model:open="changePasswordModalVisible" title="修改密码" @ok="handleChangePasswordOk"
+      @cancel="handleChangePasswordCancel" ok-text="确认" cancel-text="取消">
       <a-form :model="changePasswordForm" layout="vertical">
         <a-form-item label="新密码">
           <a-input-password v-model:value="changePasswordForm.password" placeholder="请输入新密码" />
@@ -160,7 +187,7 @@
             </a-col>
           </a-row>
         </a-form-item>
-        
+
       </a-form>
     </a-modal>
 
@@ -187,13 +214,14 @@
 
 <script setup lang="ts">
 import { searchUserOne, updateUser, userLogout } from '@/api/user';
-import { sendChangePhoneCode, verifyChangePhoneCode, sendChangePsdCode, verifyChangePsdCode  } from '@/api/sms';
+import { sendChangePhoneCode, verifyChangePhoneCode, sendChangePsdCode, verifyChangePsdCode } from '@/api/sms';
 import { useLoginUserStore } from '@/store/useLoginUserStore';
 import {
   CopyOutlined,
   EditOutlined,
   UploadOutlined,
-  UserOutlined
+  UserOutlined,
+  AlipayOutlined
 } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import { onMounted, reactive, ref } from 'vue';
@@ -220,6 +248,8 @@ interface UserInfo {
   invokeCount?: number;
   token?: string;
   isThirdUser?: number;
+  lastLoginTime?: Date;
+  loginPath?: string;
 }
 
 // 用户信息
@@ -248,7 +278,7 @@ const phoneCodeForm = reactive({
 const countdown = ref(0);
 const timer = ref<number | null>(null);
 
-  // 修改密码相关
+// 修改密码相关
 const changePasswordModalVisible = ref(false);
 const changePasswordForm = reactive({
   phone: '',
@@ -303,18 +333,18 @@ const handleChangePasswordOk = async () => {
     if (response.data.code === 200) {
       message.success({ content: '密码修改成功，请重新登录', key: updateMessageKey });
       changePasswordModalVisible.value = false;
-      
+
       // 清空表单
       changePasswordForm.code = '';
       changePasswordForm.password = '';
-      
+
       await userLogout(loginUserStore.loginUser.id);
       localStorage.removeItem('token');
       loginUserStore.loginUser = {};
 
-    
+
       // 跳转到登录页
-      setTimeout( () => {
+      setTimeout(() => {
         router.push('/user/login');
       }, 1500);
     } else {
@@ -449,6 +479,8 @@ const loadUserInfo = async () => {
       userInfo.userRole = data.userRole;
       userInfo.invokeCount = data.invokeCount;
       userInfo.isThirdUser = data.isThirdUser;
+      userInfo.lastLoginTime = data.lastLoginTime;
+      userInfo.loginPath = data.loginPath;
 
       message.success({ content: '加载用户信息成功', key: loadMessageKey });
     } else {
