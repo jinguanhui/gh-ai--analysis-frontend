@@ -421,7 +421,7 @@ const handleAlipay = async () => {
        const payHtml = response.data.data;
       
       // 创建一个新窗口
-      const payWindow = window.open('', '_blank');
+      const payWindow = window.open('', '_self');
       if (!payWindow) {
         message.error({ content: '无法打开支付窗口，请检查浏览器弹窗设置', key: payMessageKey });
         return;
