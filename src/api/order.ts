@@ -23,3 +23,14 @@ export const getOrderDetail = async (params: any) => {
     data: params,
   });
 };
+
+/**
+ * 支付宝支付
+ */
+export const alipay = async (params: any) => {
+  return myAxios.request({
+    url: "/alipay/pay",
+    method: "POST",
+    data: params,
+  });
+};

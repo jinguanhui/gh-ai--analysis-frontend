@@ -270,7 +270,7 @@ import {
 import { message } from 'ant-design-vue';
 import { onMounted, reactive, ref } from 'vue';
 import router from '@/router';
-import { createOrder, getOrderDetail } from '@/api/order';
+import { createOrder, getOrderDetail, alipay } from '@/api/order';
 
 
 const loginUserStore = useLoginUserStore(); // 创建loginUserStore实例
@@ -403,9 +403,44 @@ const handleOrderCancel = () => {
 const handleWechatPay = () => {
   message.info('微信支付功能开发中');
 };
+
 // 处理支付宝支付
-const handleAlipay = () => {
-  message.info('支付宝支付功能开发中');
+const handleAlipay = async () => {
+  orderModalVisible.value = false;
+  const payMessageKey = 'alipayMessage';
+  message.loading({ content: '正在跳转到支付宝支付页面...', key: payMessageKey });
+  
+  try {
+    // 调用后端支付宝支付API
+    const response = await alipay({
+      id: orderDetail.id,
+      money: orderDetail.money
+    });
+    
+    if (response.data.code === 200 && response.data.data) {
+       const payHtml = response.data.data;
+      
+      // 创建一个新窗口
+      const payWindow = window.open('', '_blank');
+      if (!payWindow) {
+        message.error({ content: '无法打开支付窗口，请检查浏览器弹窗设置', key: payMessageKey });
+        return;
+      }
+      
+      // 在新窗口中写入支付HTML
+      payWindow.document.write(payHtml);
+      payWindow.document.close();
+      
+      message.success({ content: '正在跳转到支付宝支付页面...', key: payMessageKey });
+      
+      
+    } else {
+      message.error({ content: '获取支付页面失败', key: payMessageKey });
+    }
+  } catch (error) {
+    console.error('支付宝支付失败:', error);
+    message.error({ content: '支付宝支付失败', key: payMessageKey });
+  }
 };
 
 // 处理修改密码
