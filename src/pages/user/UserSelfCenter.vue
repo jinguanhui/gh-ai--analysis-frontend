@@ -31,12 +31,12 @@
                 </div>
                 <div class="user-account">
                   调用次数: {{ userInfo.invokeCount || '0' }}
-                  <a-popover title="支付宝充值续费">
+                  <a-popover title="充值续费">
                     <template #content>
                       <p>点击充值,增加调用次数</p>
                     </template>
-                    <a-button type="primary">
-                      <AlipayOutlined />
+                    <a-button type="primary" @click="handleRenewal">
+                      点击续费
                     </a-button>
                   </a-popover>
                 </div>
@@ -92,7 +92,7 @@
                 <div class="info-item">
                   <div class="item-label">上次登录IP</div>
                   <div class="item-value">
-                    <span class="value">{{  userInfo.loginPath || ''  }}</span>
+                    <span class="value">{{ userInfo.loginPath || '' }}</span>
                   </div>
                 </div>
               </a-col>
@@ -108,7 +108,7 @@
                 <div class="info-item">
                   <div class="item-label">上次登录IP所属地</div>
                   <div class="item-value">
-                    <span class="value">{{  userInfo.region || ''  }}</span>
+                    <span class="value">{{ userInfo.region || '' }}</span>
                   </div>
                 </div>
               </a-col>
@@ -217,6 +217,41 @@
         </div>
       </div>
     </a-modal>
+
+    <!-- 订单详情模态框 -->
+    <a-modal v-model:open="orderModalVisible" title="订单详情" @cancel="handleOrderCancel" :footer="null" :maskClosable="false" :keyboard="false">
+      <div class="order-detail-container">
+        <div class="order-success">
+          <h3>订单提交成功，请尽快完成支付！</h3>
+          <p>请在 <span style="color: #ff4d4f;">15分钟</span> 内完成支付，超时后将取消订单</p>
+        </div>
+        <div class="order-info">
+          <div class="order-item">
+            <span class="label">商品名称：</span>
+            <span class="value">10元续费100次AI分析</span>
+          </div>
+          <div class="order-item">
+            <span class="label">下单时间：</span>
+            <span class="value">{{ formatDate(orderDetail.createTime) }}</span>
+          </div>
+        </div>
+        <div class="order-amount">
+          <span class="label">待支付总金额：</span>
+          <span class="value">{{ orderDetail.money?.toFixed(2) }} 元</span>
+        </div>
+        <div class="payment-methods">
+          <h4>支付方式：</h4>
+          <div class="payment-buttons">
+            <a-button @click="handleWechatPay">
+              <img src="@/assets/wechat.png"/>微信支付</a-button>
+            <a-button @click="handleAlipay">
+              <img src="@/assets/alipay.png"/>
+              支付宝
+            </a-button>
+          </div>
+        </div>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -229,14 +264,27 @@ import {
   EditOutlined,
   UploadOutlined,
   UserOutlined,
-  AlipayOutlined
+  AlipayOutlined,
+  WechatOutlined
 } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import { onMounted, reactive, ref } from 'vue';
 import router from '@/router';
+import { createOrder, getOrderDetail } from '@/api/order';
+
 
 const loginUserStore = useLoginUserStore(); // 创建loginUserStore实例
-
+// 订单接口定义
+interface Order {
+  id?: number;
+  userId?: number;
+  money?: number;
+  paymentMethod?: string;
+  status?: string;
+  description?: string;
+  createTime?: Date;
+  updateTime?: Date;
+}
 
 interface UserInfo {
   id?: number;
@@ -260,6 +308,10 @@ interface UserInfo {
   loginPath?: string;
   region?: string;
 }
+
+// 订单相关
+const orderModalVisible = ref(false);
+const orderDetail = reactive<Order>({});
 
 // 用户信息
 const userInfo = reactive<UserInfo>({
@@ -287,6 +339,7 @@ const phoneCodeForm = reactive({
 const countdown = ref(0);
 const timer = ref<number | null>(null);
 
+
 // 修改密码相关
 const changePasswordModalVisible = ref(false);
 const changePasswordForm = reactive({
@@ -294,6 +347,66 @@ const changePasswordForm = reactive({
   code: '',
   password: ''
 });
+
+// 处理续费按钮点击
+const handleRenewal = async () => {
+  const renewalMessageKey = 'renewalMessage';
+  message.loading({ content: '创建订单中...', key: renewalMessageKey });
+
+  try {
+    // 创建订单
+    // 创建订单 - 生成12位无规则纯数字id
+    const generateRandom12DigitId = () => {
+      let id = '';
+      // 第一位不能为0，确保是12位数字
+      id += Math.floor(Math.random() * 9) + 1;
+      // 生成剩下的11位数字
+      for (let i = 0; i < 11; i++) {
+        id += Math.floor(Math.random() * 10);
+      }
+      return id;
+    };
+
+    const orderId = generateRandom12DigitId();
+    const createResponse = await createOrder({
+      id: orderId,
+      money: 10.0,
+      paymentMethod: 'ALIPAY',
+    });
+
+    if (createResponse.data.code === 200 && createResponse.data.data) {
+      // 获取订单详情
+      const detailResponse = await getOrderDetail({ id: orderId });
+
+      if (detailResponse.data.code === 200 && detailResponse.data.data) {
+        // 填充订单详情
+        Object.assign(orderDetail, detailResponse.data.data);
+        // 显示订单详情模态框
+        orderModalVisible.value = true;
+        message.success({ content: '订单创建成功', key: renewalMessageKey });
+      } else {
+        message.error({ content: '获取订单详情失败', key: renewalMessageKey });
+      }
+    } else {
+      message.error({ content: '创建订单失败', key: renewalMessageKey });
+    }
+  } catch (error) {
+    console.error('续费失败:', error);
+    message.error({ content: '续费失败', key: renewalMessageKey });
+  }
+};
+// 处理订单模态框取消
+const handleOrderCancel = () => {
+  orderModalVisible.value = false;
+};
+// 处理微信支付
+const handleWechatPay = () => {
+  message.info('微信支付功能开发中');
+};
+// 处理支付宝支付
+const handleAlipay = () => {
+  message.info('支付宝支付功能开发中');
+};
 
 // 处理修改密码
 const handleChangePassword = () => {
@@ -662,6 +775,82 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 订单详情模态框样式 */
+.order-detail-container {
+  padding: 20px 0;
+}
+
+.order-success {
+  margin-bottom: 20px;
+}
+
+.order-success h3 {
+  color: #52c41a;
+  margin-bottom: 8px;
+}
+
+.order-success p {
+  color: #666;
+  font-size: 14px;
+}
+
+.order-info {
+  margin-bottom: 20px;
+}
+
+.order-item {
+  display: flex;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.order-item .label {
+  width: 100px;
+  color: #666;
+}
+
+.order-item .value {
+  color: #333;
+  font-weight: 500;
+}
+
+.order-amount {
+  margin-bottom: 30px;
+  padding: 10px 0;
+  border-top: 1px dashed #f0f0f0;
+  border-bottom: 1px dashed #f0f0f0;
+}
+
+.order-amount .label {
+  font-size: 18px;
+  color: #666;
+}
+
+.order-amount .value {
+  font-size: 24px;
+  color: #ff4d4f;
+  font-weight: bold;
+}
+
+.payment-methods h4 {
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.payment-buttons {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  gap: 16px;
+}
+
+.payment-buttons img {
+  height: 1.5em;
+  width: auto;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
 .user-self-center {
   padding: 20px;
   background-color: #f0f2f5;

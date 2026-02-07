@@ -3,7 +3,7 @@
     <a-row :wrap="false">
       <a-col flex="200px">
         <div class="title-bar" @click="goToHome">
-          <img class="logo" src="../assets/logo.jpg" alt="logo" />
+          <img class="logo" src="../assets/logo.png" alt="logo" />
           <div class="title">光吾智能分析</div>
         </div>
       </a-col>
