@@ -34,3 +34,15 @@ export const alipay = async (params: any) => {
     data: params,
   });
 };
+
+/**
+ * 获取订单列表
+ * @param params
+ */
+export const getOrderList = async (params: any) => {
+  return myAxios.request({
+    url: "/order/list/page",
+    method: "POST",
+    data: params,
+  });
+};

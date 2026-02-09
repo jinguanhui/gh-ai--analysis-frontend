@@ -32,6 +32,9 @@
                   <a-menu-item v-if="loginUserStore.loginUser.id" @click="doMenuClick({ key: '/user/center' })">
                     <a>个人中心</a>
                   </a-menu-item>
+                  <a-menu-item v-if="loginUserStore.loginUser.id" @click="doMenuClick({ key: '/user/message' })">
+                    <a>我的消息</a>
+                  </a-menu-item>
                   <a-menu-item v-if="loginUserStore.loginUser.id" @click="doMenuClick({ key: '/user/accesskey' })">
                     <a>PublicKey管理</a>
                   </a-menu-item>

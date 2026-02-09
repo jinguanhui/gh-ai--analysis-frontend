@@ -11,6 +11,7 @@ import ChartDetail from "@/pages/chart/ChartDetail.vue";
 import AIAnalysisAsync from "@/pages/chart/AIAnalysisAsync.vue";
 import { KeepAlive } from "vue";
 import AIAnalysisByMq from "@/pages/chart/AIAnalysisByMq.vue";
+import MessagePage from "@/pages/user/MessagePage.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -48,6 +49,11 @@ const routes: Array<RouteRecordRaw> = [
     path: "/chart/detail/:id",
     name: "chartDetail",
     component: ChartDetail,
+  },
+  {
+    path: "/user/message",
+    name: "userMessage",
+    component: MessagePage,
   },
   {
     path: "/user/login",
