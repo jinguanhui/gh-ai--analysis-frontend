@@ -46,3 +46,15 @@ export const getOrderList = async (params: any) => {
     data: params,
   });
 };
+
+/**
+ * 修改订单状态
+ * @param params
+ */
+export const changeOrderStatus = async (params: any) => {
+  return myAxios.request({
+    url: "/order/changeStatus",
+    method: "POST",
+    data: params,
+  });
+};
