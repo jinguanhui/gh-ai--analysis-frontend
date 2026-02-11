@@ -60,6 +60,10 @@
                                                 @click="handleCancel(order)">
                                                 取消订单
                                             </a-button>
+                                              <a-button v-if="order.status === 1" type="text" danger
+                                                @click="handleRefund(order)">
+                                                申请退款
+                                            </a-button>
                                             <a-button type="text" @click="handleDetail(order)">
                                                 查看详情
                                             </a-button>
@@ -169,7 +173,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from 'vue';
 import { message } from 'ant-design-vue';
-import { getOrderList, alipay, getOrderDetail, changeOrderStatus } from '@/api/order';
+import { getOrderList, alipay, getOrderDetail, changeOrderStatus, refundOrder } from '@/api/order';
 import antdLocale from 'ant-design-vue/es/locale/zh_CN';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
@@ -214,6 +218,28 @@ const pageSize = ref(10);
 const totalCount = ref(0);
 const loading = ref(false);
 
+// 处理退款
+const handleRefund = async (order: Order) => {
+    try {
+        const refundMessageKey = 'refundMessage';
+        message.loading({ content: '正在处理退款申请...', key: refundMessageKey });
+        
+        // 调用后端退款API
+        const response = await refundOrder({
+            outTradeNo: order.id?.toString()
+        });
+        if (response.data.code === 200) {
+            message.success({ content: '退款申请提交成功', key: refundMessageKey });
+            // 重新加载订单列表
+            loadOrderList();
+        } else {
+            message.error({ content: '退款申请失败', key: refundMessageKey });
+        }
+    } catch (error) {
+        console.error('退款失败:', error);
+        message.error('退款申请失败');
+    }
+};
 
 // 处理支付方式文本
 const formatPaymentMethod = (method: string) => {

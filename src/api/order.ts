@@ -58,3 +58,15 @@ export const changeOrderStatus = async (params: any) => {
     data: params,
   });
 };
+
+/**
+ * 订单退款
+ * @param params
+ */
+export const refundOrder = async (params: any) => {
+  return myAxios.request({
+    url: "/alipay/refund",
+    method: "POST",
+    data: params,
+  });
+};
