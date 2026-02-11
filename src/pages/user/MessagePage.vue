@@ -3,92 +3,125 @@
         <a-config-provider :locale="antdLocale">
             <div class="message-container">
                 <!-- 消息类型标签页 -->
-                <a-tabs v-model:activeKey="activeTab" @change="handleTabChange">
-                    <a-tab-pane key="comment" tab="评论互动" />
-                    <a-tab-pane key="like" tab="赞和收藏" />
-                    <a-tab-pane key="follow" tab="新增关注" />
-                    <a-tab-pane key="system" tab="系统通知" />
-                    <a-tab-pane key="private" tab="私信" />
-                    <a-tab-pane key="order" tab="订单消息">
-                        <!-- 订单状态过滤标签 -->
-                        <div class="order-status-filter">
-                            <a-radio-group v-model:value="orderStatus" button-style="solid"
-                                @change="handleStatusChange">
-                                <a-radio-button :value="null">全部</a-radio-button>
-                                <a-radio-button :value="0">待支付</a-radio-button>
-                                <a-radio-button :value="1">支付成功</a-radio-button>
-                                <a-radio-button :value="2">已退款</a-radio-button>
-                                <a-radio-button :value="3">已取消</a-radio-button>
-                                <a-radio-button :value="4">已完成</a-radio-button>
-                            </a-radio-group>
-                            <div class="mark-all-read">
-                                <a-button type="text">全部已读</a-button>
-                                <a-button type="primary" @click="loadOrderList()">刷新订单</a-button>
-                            </div>
-                        </div>
+                <!-- 标签页和全部已读按钮容器 -->
+                <div class="tabs-header">
+                    <!-- 消息类型标签页 -->
+                    <a-tabs v-model:activeKey="activeTab" @change="handleTabChange" style="flex: 1;">
+                        <a-tab-pane key="system" tab="系统通知">
+                            <!-- 系统通知列表 -->
+                            <div class="notification-list-container">
 
-                        <!-- 订单列表 -->
-                        <div class="order-list-container">
-                            <a-empty v-if="orderList.length === 0" description="暂无订单" />
-                            <a-list v-else :data-source="orderList" :loading="loading">
+                                <a-empty v-if="notificationList.length === 0" description="暂无系统通知" />
+                                <a-list v-else :data-source="notificationList" :loading="notificationLoading">
+                                    <template #renderItem="{ item: notification }">
+                                        <a-list-item>
+                                            <a-list-item-meta>
+                                                <template #title>
+                                                    <div class="notification-title">
+                                                        <span class="notification-subject">{{ notification.title
+                                                            }}</span>
+                                                        <span class="notification-time">{{
+                                                            formatDate(notification.createTime) }}</span>
+                                                    </div>
+                                                </template>
+                                                <template #description>
+                                                    <div class="notification-content">
+                                                        <p v-html="notification.content"></p>
+                                                    </div>
+                                                </template>
+                                            </a-list-item-meta>
+                                        </a-list-item>
+                                    </template>
+                                </a-list>
 
-                                <template #renderItem="{ item: order }">
-                                    <a-list-item>
-                                        <a-list-item-meta>
-                                            <template #title>
-                                                <div class="order-title">
-                                                    <span class="order-id">订单ID: {{ order.id }}</span>
-                                                    <span :class="getStatusClass(order.status)">{{
-                                                        getStatusText(order.status) }}</span>
-                                                </div>
-                                            </template>
-                                            <template #description>
-                                                <div class="order-description">
-                                                    <p>商品名称: 10元续费100次AI分析</p>
-                                                    <p>下单时间: {{ formatDate(order.createTime) }}</p>
-                                                    <p>金额: ¥{{ order.money?.toFixed(2) }}</p>
-                                                </div>
-                                            </template>
-                                        </a-list-item-meta>
-                                        <!-- 订单操作按钮 -->
-                                        <div class="order-actions">
-                                            <a-button v-if="order.status === 0" type="primary"
-                                                @click="handlePay(order)">
-                                                立即支付
-                                            </a-button>
-                                            <a-button v-if="order.status === 0" type="text"
-                                                @click="handleCancel(order)">
-                                                取消订单
-                                            </a-button>
-                                              <a-button v-if="order.status === 1" type="text" danger
-                                                @click="handleRefund(order)">
-                                                申请退款
-                                            </a-button>
-                                            <a-button type="text" @click="handleDetail(order)">
-                                                查看详情
-                                            </a-button>
-                                        </div>
-                                    </a-list-item>
-                                </template>
-                            </a-list>
-                             <!-- 分页组件 -->
-                            <div class="pagination-container">
-                                <a-pagination 
-                                    v-model:current="currentPage" 
-                                    v-model:page-size="pageSize"
-                                    :total="totalCount" 
-                                    show-quick-jumper
-                                    :show-size-changer="true"
-                                    :page-size-options="['10', '20', '50', '100']"
-                                    @change="handlePageChange"
-                                    @show-size-change="handlePageSizeChange"
-                                    :show-total="(total) => `共 ${total} 条记录`"
-                                />
+                                <!-- 系统通知分页 -->
+                                <div v-if="notificationTotalCount > 0" class="pagination-container">
+                                    <a-pagination :current-page="notificationCurrentPage"
+                                        :page-size="notificationPageSize" :total="notificationTotalCount"
+                                        show-quick-jumper :show-size-changer="true"
+                                        :page-size-options="['10', '20', '50', '100']"
+                                        @change="handleNotificationPageChange"
+                                        @show-size-change="handleNotificationPageSizeChange"
+                                        :show-total="(total) => `共 ${total} 条记录`" />
+                                </div>
                             </div>
-                        </div>
-                    </a-tab-pane>
-                </a-tabs>
+                        </a-tab-pane>
+                        <a-tab-pane key="order" tab="订单消息">
+                            <!-- 订单状态过滤标签 -->
+                            <div class="order-status-filter">
+                                <a-radio-group v-model:value="orderStatus" button-style="solid"
+                                    @change="handleStatusChange">
+                                    <a-radio-button :value="null">全部</a-radio-button>
+                                    <a-radio-button :value="0">待支付</a-radio-button>
+                                    <a-radio-button :value="1">支付成功</a-radio-button>
+                                    <a-radio-button :value="2">已退款</a-radio-button>
+                                    <a-radio-button :value="3">已取消</a-radio-button>
+                                    <a-radio-button :value="4">已完成</a-radio-button>
+                                </a-radio-group>
+                                <div class="mark-all-read">
+                                    <a-button type="primary" @click="loadOrderList()">刷新订单</a-button>
+                                </div>
+                            </div>
+
+                            <!-- 订单列表 -->
+                            <div class="order-list-container">
+                                <a-empty v-if="orderList.length === 0" description="暂无订单" />
+                                <a-list v-else :data-source="orderList" :loading="loading">
+
+                                    <template #renderItem="{ item: order }">
+                                        <a-list-item>
+                                            <a-list-item-meta>
+                                                <template #title>
+                                                    <div class="order-title">
+                                                        <span class="order-id">订单ID: {{ order.id }}</span>
+                                                        <span :class="getStatusClass(order.status)">{{
+                                                            getStatusText(order.status) }}</span>
+                                                    </div>
+                                                </template>
+                                                <template #description>
+                                                    <div class="order-description">
+                                                        <p>商品名称: 10元续费100次AI分析</p>
+                                                        <p>下单时间: {{ formatDate(order.createTime) }}</p>
+                                                        <p>金额: ¥{{ order.money?.toFixed(2) }}</p>
+                                                    </div>
+                                                </template>
+                                            </a-list-item-meta>
+                                            <!-- 订单操作按钮 -->
+                                            <div class="order-actions">
+                                                <a-button v-if="order.status === 0" type="primary"
+                                                    @click="handlePay(order)">
+                                                    立即支付
+                                                </a-button>
+                                                <a-button v-if="order.status === 0" type="text"
+                                                    @click="handleCancel(order)">
+                                                    取消订单
+                                                </a-button>
+                                                <a-button v-if="order.status === 1" type="text" danger
+                                                    @click="handleRefund(order)">
+                                                    申请退款
+                                                </a-button>
+                                                <a-button type="text" @click="handleDetail(order)">
+                                                    查看详情
+                                                </a-button>
+                                            </div>
+                                        </a-list-item>
+                                    </template>
+                                </a-list>
+                                <!-- 分页组件 -->
+                                <div class="pagination-container">
+                                    <a-pagination v-model:current="currentPage" v-model:page-size="pageSize"
+                                        :total="totalCount" show-quick-jumper :show-size-changer="true"
+                                        :page-size-options="['10', '20', '50', '100']" @change="handlePageChange"
+                                        @show-size-change="handlePageSizeChange"
+                                        :show-total="(total) => `共 ${total} 条记录`" />
+                                </div>
+                            </div>
+                        </a-tab-pane>
+
+                    </a-tabs>
+                </div>
             </div>
+
         </a-config-provider>
 
         <!-- 支付模态框 -->
@@ -177,13 +210,15 @@ import { getOrderList, alipay, getOrderDetail, changeOrderStatus, refundOrder } 
 import antdLocale from 'ant-design-vue/es/locale/zh_CN';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
-import { usePagination } from 'vue-request';
+import { getSysNotificationList } from '@/api/systemNotify';
+
 
 // 设置dayjs为中文
 dayjs.locale('zh-cn');
 
 // 消息标签页
-const activeTab = ref('order'); // 默认显示订单消息
+const activeTab = ref(localStorage.getItem('messageActiveTab') || 'order');
+
 
 // 订单状态过滤
 const orderStatus = ref<number | null>(null);
@@ -210,6 +245,21 @@ interface Order {
     payTime?: Date;
 
 }
+// 系统通知数据结构
+interface SystemNotification {
+    id?: number;
+    title?: string;
+    content?: string;
+    createTime?: Date;
+    isRead?: number;
+}
+
+// 系统通知列表数据
+const notificationList = ref<SystemNotification[]>([]);
+const notificationLoading = ref(false);
+const notificationCurrentPage = ref(1);
+const notificationPageSize = ref(10);
+const notificationTotalCount = ref(0);
 
 // 分页相关状态
 const orderList = ref<Order[]>([]);
@@ -218,12 +268,50 @@ const pageSize = ref(10);
 const totalCount = ref(0);
 const loading = ref(false);
 
+// 加载系统通知列表
+const loadSystemNotifications = async () => {
+    notificationLoading.value = true;
+    try {
+        const response = await getSysNotificationList({
+            current: notificationCurrentPage.value,
+            pageSize: notificationPageSize.value
+        });
+
+        if (response.data.code === 200 && response.data.data) {
+            notificationList.value = response.data.data.records || [];
+            notificationTotalCount.value = response.data.data.total || 0;
+        } else {
+            message.error('获取系统通知列表失败');
+        }
+    } catch (error) {
+        console.error('获取系统通知列表失败:', error);
+        message.error('获取系统通知列表失败');
+    } finally {
+        notificationLoading.value = false;
+    }
+};
+
+
+
+// 处理系统通知分页变化
+const handleNotificationPageChange = (pageNumber: number) => {
+    notificationCurrentPage.value = pageNumber;
+    loadSystemNotifications();
+};
+
+// 处理系统通知页面大小变化
+const handleNotificationPageSizeChange = (current: number, size: number) => {
+    notificationCurrentPage.value = 1;
+    notificationPageSize.value = size;
+    loadSystemNotifications();
+};
+
 // 处理退款
 const handleRefund = async (order: Order) => {
     try {
         const refundMessageKey = 'refundMessage';
         message.loading({ content: '正在处理退款申请...', key: refundMessageKey });
-        
+
         // 调用后端退款API
         const response = await refundOrder({
             outTradeNo: order.id?.toString()
@@ -256,9 +344,12 @@ const formatPaymentMethod = (method: string) => {
 // 处理标签页切换
 const handleTabChange = (key: string) => {
     activeTab.value = key;
+    // 将当前标签页状态保存到localStorage
+    localStorage.setItem('messageActiveTab', key);
     if (key === 'order') {
-        // 切换到订单标签时重新加载数据
         loadOrderList();
+    } else if (key === 'system') {
+        loadSystemNotifications();
     }
 };
 
@@ -446,11 +537,56 @@ const handleDetailCancel = () => {
 onMounted(() => {
     if (activeTab.value === 'order') {
         loadOrderList();
+    } else if (activeTab.value === 'system') {
+        loadSystemNotifications();
     }
 });
 </script>
 
 <style scoped>
+.order-actions-header {
+    display: flex;
+    gap: 10px;
+}
+/* 标签页头部样式 */
+.tabs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+/* 系统通知样式 */
+.notification-list-container {
+    margin-top: 20px;
+}
+
+.notification-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.notification-subject {
+    font-weight: 600;
+    font-size: 18px;
+    color: #303133;
+}
+
+.notification-time {
+    font-size: 14px;
+    color: #909399;
+}
+
+.notification-content {
+    margin-top: 8px;
+    font-size: 15px;
+    color: #606266;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
 /* 分页容器样式 */
 .pagination-container {
     margin-top: 20px;
@@ -458,6 +594,7 @@ onMounted(() => {
     justify-content: flex-end;
     align-items: center;
 }
+
 /* 订单详情模态框样式 */
 .order-detail-container {
     padding: 20px 0;
