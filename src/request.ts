@@ -7,7 +7,7 @@ console.log(process.env.NODE_ENV);
 
 const myAxios = axios.create({
   // 区分开发和线上环境
-  baseURL: "http://localhost:8124/api",
+  baseURL: "http://47.112.200.74:8124/api",
   timeout: 100000,
   withCredentials: true,
 });
